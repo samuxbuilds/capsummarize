@@ -1,0 +1,744 @@
+@import "tailwindcss";
+
+/* ============================================
+   CSS Variables - Cursor-Inspired Dark Theme
+   ============================================ */
+:root {
+  /* Base colors - Cursor dark palette */
+  --background: 222 47% 6%;  /* #0F1115 */
+  --foreground: 218 11% 92%; /* #E6E8EB */
+
+  /* Card colors */
+  --card: 222 20% 11%;       /* #181A1F */
+  --card-foreground: 218 11% 92%;
+
+  /* Muted colors - lighter for better readability */
+  --muted: 220 9% 46%;       /* #70757A */
+  --muted-foreground: 220 9% 66%; /* #A0A6B2 - increased from 62% */
+
+  /* Primary brand colors - Purple accent */
+  --primary: 258 90% 66%;    /* #7C5CFF */
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary colors */
+  --secondary: 222 20% 14%;
+  --secondary-foreground: 218 11% 92%;
+
+  /* Accent colors */
+  --accent: 258 90% 66%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Destructive/Error colors */
+  --destructive: 0 84% 70%;  /* #FF6B6B */
+  --destructive-foreground: 0 0% 100%;
+
+  /* Success color */
+  --success: 162 100% 39%;   /* #00C48C */
+  --success-foreground: 0 0% 100%;
+
+  /* Warning color */
+  --warning: 38 92% 50%;     /* #F59E0B */
+  --warning-foreground: 0 0% 100%;
+
+  /* Border colors - softer translucent borders */
+  --border: 220 13% 18%;     /* #262A31 - base */
+  --border-translucent: 220 13% 91% / 0.08; /* rgba(255,255,255,0.08) */
+  --input: 220 13% 18%;
+
+  /* Focus ring */
+  --ring: 258 90% 66%;
+
+  /* Border radius */
+  --radius: 0.75rem; /* 12px */
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ============================================
+   Component Classes - Plain CSS
+   ============================================ */
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Card component - improved elevation and background */
+.card {
+  background: hsl(220 20% 9%); /* #15171C - slightly lighter than card var */
+  color: hsl(var(--card-foreground));
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.4);
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  padding: 0;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.5);
+}
+
+/* Badge component - improved with accent colors */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem; /* 2px 8px */
+  border-radius: 0.5rem; /* 8px */
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+.badge-muted {
+  background: rgba(124, 92, 255, 0.15);
+  color: #C3B8FF;
+  border-color: rgba(124, 92, 255, 0.25);
+}
+
+/* Button components - improved padding and glow */
+.btn-primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: 0;
+  padding: 0.625rem 1.25rem; /* 10px vertical */
+  border-radius: 0.625rem; /* 10px */
+  font-weight: 500;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(124, 92, 255, 0.4), 0 4px 8px 0 rgb(0 0 0 / 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Secondary button - for less prominent actions */
+.btn-secondary {
+  background: transparent;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  padding: 0.625rem 1.25rem; /* 10px vertical */
+  border-radius: 0.625rem; /* 10px */
+  font-weight: 500;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--muted) / 0.1);
+  border-color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground));
+}
+
+.btn-secondary:active:not(:disabled) {
+  background: hsl(var(--muted) / 0.15);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: hsl(var(--muted-foreground));
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  position: relative;
+  opacity: 0.7;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--primary));
+  transform: scale(1.05);
+  opacity: 1;
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
+}
+
+.btn-icon:active:not(:disabled) {
+  transform: scale(1);
+}
+
+.btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-icon:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Provider icon button - circular with icon and tooltip on hover */
+.provider-icon-btn {
+  width: 3rem; /* 48px */
+  height: 3rem;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0.5rem;
+}
+
+.provider-icon-btn:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.2);
+}
+
+.provider-icon-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.provider-icon-btn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.provider-icon {
+  width: 1.5rem; /* 24px */
+  height: 1.5rem;
+  object-fit: contain;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.provider-icon-btn:hover .provider-icon {
+  opacity: 1;
+}
+
+/* Tooltip styling */
+.provider-icon-btn[title] {
+  position: relative;
+}
+
+.provider-icon-btn[title]::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+}
+
+.provider-icon-btn:hover::after {
+  opacity: 1;
+}
+
+/* Markdown content styling - improved typography */
+.markdown-content {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content h1 {
+  font-size: 1.0625rem; /* 17px */
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.625rem;
+  color: hsl(var(--foreground));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content h2 {
+  font-size: 1rem; /* 16px */
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content h3 {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 600;
+  margin-top: 0.875rem;
+  margin-bottom: 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content p {
+  margin-bottom: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 0.875rem;
+  padding-left: 1.5rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.markdown-content li {
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
+
+.markdown-content li::marker {
+  color: hsl(var(--primary));
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content code {
+  padding: 0.125rem 0.375rem;
+  background: hsl(var(--card));
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  font-family: 'IBM Plex Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+.markdown-content pre {
+  padding: 1rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.875rem;
+}
+
+.markdown-content pre code {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1rem;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.875rem;
+}
+
+.markdown-content a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content em {
+  font-style: italic;
+}
+
+.markdown-content hr {
+  border-color: hsl(var(--border));
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+
+/* Fade transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* Skeleton loading animation */
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    rgba(124, 92, 255, 0.1) 0%,
+    rgba(124, 92, 255, 0.2) 50%,
+    rgba(124, 92, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes pulseWave {
+  0% {
+    opacity: 0.3;
+    background-position: 200% 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+    background-position: -200% 0;
+  }
+}
+
+.animate-pulse-wave {
+  animation: pulseWave 2s ease-in-out infinite;
+}
+
+/* Pulsing ring animation for Q&A input */
+@keyframes pulseRing {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 3s ease-in-out infinite;
+}
+
+
+/* Form inputs - dropdown with hover/focus states */
+select,
+input[type="text"],
+textarea {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease-in-out;
+}
+
+select:hover,
+input[type="text"]:hover,
+textarea:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(124, 92, 255, 0.3);
+}
+
+select:focus,
+input[type="text"]:focus,
+textarea:focus {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(124, 92, 255, 0.5);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.1);
+}
+
+/* Error card styling */
+.error-card {
+  background: rgba(255, 107, 107, 0.08);
+  border: none;
+  border-radius: var(--radius);
+}
+
+
+/* Smooth transitions for layout changes */
+main > * {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ============================================
+   Settings Page Styles
+   ============================================ */
+
+/* Settings tabs */
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-tab:hover {
+  color: hsl(var(--foreground));
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settings-tab.active {
+  color: hsl(var(--primary));
+  border-bottom-color: hsl(var(--primary));
+}
+
+.settings-tab svg {
+  flex-shrink: 0;
+}
+
+/* Settings content tabs */
+.settings-content {
+  display: none;
+}
+
+.settings-content.active {
+  display: block;
+  animation: fade-in 0.2s ease;
+}
+
+/* Button icon small variant */
+.btn-icon-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-sm:hover:not(:disabled) {
+  color: hsl(var(--foreground));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-icon-sm:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.95);
+}
+
+.btn-icon-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-icon-sm:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Code inline */
+code {
+  padding: 0.125rem 0.375rem;
+  background: rgba(124, 92, 255, 0.15);
+  border-radius: 0.25rem;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+/* History card styles */
+.history-card.selected {
+  background: rgba(124, 92, 255, 0.1);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+}
+
+.history-card.selected:hover {
+  background: rgba(124, 92, 255, 0.15);
+}
+
+/* Toast notification styles */
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 50;
+  transition: opacity 0.3s ease-in-out;
+  opacity: 0;
+}
+
+.toast-info {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+.toast-success {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.toast-error {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+}
+
+/* Utility classes for validation states */
+.border-success {
+  border-color: hsl(var(--success)) !important;
+}
+
+.border-destructive {
+  border-color: hsl(var(--destructive)) !important;
+}
+
+.text-success {
+  color: hsl(var(--success)) !important;
+}
+
+.text-warning {
+  color: hsl(var(--warning)) !important;
+}
+
+.text-destructive {
+  color: hsl(var(--destructive)) !important;
+}
+
+/* Toggle switch styles */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: rgba(112, 117, 122, 0.3);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 9999px;
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type="checkbox"]:checked + .toggle-switch {
+  background-color: hsl(var(--primary));
+}
+
+input[type="checkbox"]:checked + .toggle-switch::after {
+  transform: translateX(20px);
+}
+
+input[type="checkbox"]:focus + .toggle-switch {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 2px;
+}
+
+/* Preference rows */
+.settings-content .space-y-0 > div {
+  margin-top: 0;
+  margin-bottom: 0;
+}

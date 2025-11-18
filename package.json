@@ -1,0 +1,41 @@
+{
+  "name": "capsummarize-extension",
+  "version": "1.0.0",
+  "description": "AI-powered video caption summaries with follow-up Q&A",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run build:env && bun run watch",
+    "build": "bun run build:env && bun run clean && mkdir -p dist/{ui,utils,icons,styles} && bun run build:css && bun run build:manifest && bun run build:background && bun run build:content && bun run build:interceptor && bun run build:ui && bun run build:utils && bun run copy:static",
+    "build:env": "node scripts/build-with-env.js",
+    "build:css": "bun build-css.js",
+    "build:manifest": "bun run src/manifest.ts > dist/manifest.json",
+    "build:background": "bun build src/background.ts --outdir dist --target browser --minify",
+    "build:content": "bun build src/content.ts --outdir dist --target browser --minify",
+    "build:interceptor": "bun build src/interceptor.ts --outdir dist --target browser --minify",
+    "build:ui": "bun build src/ui/sidepanel.ts src/ui/settings.ts src/ui/ui-utils.ts --outdir dist/ui --target browser --minify && cp -r src/ui/llm-providers dist/ui/",
+    "build:utils": "bun build src/utils/*.ts --outdir dist/utils --target browser --minify",
+    "copy:static": "cp src/ui/sidepanel.html src/ui/settings.html dist/ui/ && cp -r icons/* dist/icons/ 2>/dev/null || true",
+    "watch": "bun build-css.js & bun build --watch src/background.ts --outdir dist --target browser --minify & bun build --watch src/content.ts --outdir dist --target browser --minify & bun build --watch src/interceptor.ts --outdir dist --target browser --minify & bun build --watch src/ui/sidepanel.ts src/ui/settings.ts --outdir dist/ui --target browser --minify & bun build --watch src/utils/*.ts --outdir dist/utils --target browser --minify",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"server/**/*.ts\" \"src/**/*.html\""
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/chrome": "^0.0.254",
+    "@types/node": "^24.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.45.0",
+    "postcss": "^8.4.40",
+    "prettier": "^3.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "marked": "^9.1.6"
+  }
+}
