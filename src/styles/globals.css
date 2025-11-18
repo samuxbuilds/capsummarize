@@ -4,29 +4,29 @@
    CSS Variables - Cursor-Inspired Dark Theme
    ============================================ */
 :root {
-  /* Base colors - Cursor dark palette */
-  --background: 222 47% 6%;  /* #0F1115 */
-  --foreground: 218 11% 92%; /* #E6E8EB */
+  /* Base colors - Deep space blue/black theme */
+  --background: 229 63% 5%;  /* #050816 */
+  --foreground: 0 0% 88%;    /* #e0e0e0 */
 
   /* Card colors */
-  --card: 222 20% 11%;       /* #181A1F */
-  --card-foreground: 218 11% 92%;
+  --card: 229 63% 8%;        /* Slightly lighter than background */
+  --card-foreground: 0 0% 88%;
 
-  /* Muted colors - lighter for better readability */
-  --muted: 220 9% 46%;       /* #70757A */
-  --muted-foreground: 220 9% 66%; /* #A0A6B2 - increased from 62% */
+  /* Muted colors */
+  --muted: 229 20% 20%;
+  --muted-foreground: 229 10% 60%;
 
-  /* Primary brand colors - Purple accent */
-  --primary: 258 90% 66%;    /* #7C5CFF */
-  --primary-foreground: 0 0% 100%;
+  /* Primary brand colors - Cyan accent */
+  --primary: 189 86% 53%;    /* #22d3ee (Cyan 400) */
+  --primary-foreground: 229 63% 5%;
 
   /* Secondary colors */
-  --secondary: 222 20% 14%;
-  --secondary-foreground: 218 11% 92%;
+  --secondary: 229 30% 15%;
+  --secondary-foreground: 0 0% 88%;
 
-  /* Accent colors */
-  --accent: 258 90% 66%;
-  --accent-foreground: 0 0% 100%;
+  /* Accent colors - Fuchsia */
+  --accent: 290 89% 72%;     /* #e879f9 (Fuchsia 400) */
+  --accent-foreground: 229 63% 5%;
 
   /* Destructive/Error colors */
   --destructive: 0 84% 70%;  /* #FF6B6B */
@@ -40,16 +40,16 @@
   --warning: 38 92% 50%;     /* #F59E0B */
   --warning-foreground: 0 0% 100%;
 
-  /* Border colors - softer translucent borders */
-  --border: 220 13% 18%;     /* #262A31 - base */
-  --border-translucent: 220 13% 91% / 0.08; /* rgba(255,255,255,0.08) */
-  --input: 220 13% 18%;
+  /* Border colors */
+  --border: 0 0% 100%;       /* White base for opacity usage */
+  --border-translucent: 0 0% 100% / 0.1; /* rgba(255,255,255,0.1) */
+  --input: 229 20% 20%;
 
   /* Focus ring */
-  --ring: 258 90% 66%;
+  --ring: 189 86% 53%;
 
   /* Border radius */
-  --radius: 0.75rem; /* 12px */
+  --radius: 1.5rem; /* 24px - matching theme(borderRadius.2xl) */
 }
 
 /* ============================================
@@ -77,27 +77,48 @@ body {
 }
 
 .fade-in {
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn 0.4s ease-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Card component - improved elevation and background */
+/* Card component - Glassmorphism */
 .card {
-  background: hsl(220 20% 9%); /* #15171C - slightly lighter than card var */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: hsl(var(--card-foreground));
-  border: none;
   border-radius: var(--radius);
-  box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
   padding: 0;
+}
+
+/* Neon Glows */
+.neon-glow-cyan {
+  box-shadow: 0 0 5px #22d3ee,
+    0 0 10px #22d3ee,
+    0 0 20px #06b6d4;
+}
+
+.neon-glow-fuchsia {
+  box-shadow: 0 0 5px #e879f9,
+    0 0 10px #e879f9,
+    0 0 20px #d946ef;
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 8px #22d3ee;
 }
 
 .card:hover {

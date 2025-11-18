@@ -865,7 +865,7 @@ async function updateLicenseStatus(): Promise<void> {
       elements.licenseStatus.innerHTML = `
         <div class="text-center p-6 border border-border rounded-lg">
           <svg class="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7h2a5 5 0 015 5v0a5 5 0 01-5 5h-2m-6 0H7a5 5 0 01-5-5v0a5 5 0 015-5h2m6 5v-2m0 4v-2"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
           </svg>
           <p class="text-sm font-medium text-foreground mb-2">No License Activated</p>
           <p class="text-xs text-muted-foreground">Enter your license key below to unlock Pro features</p>
