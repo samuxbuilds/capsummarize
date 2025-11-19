@@ -66,6 +66,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.background {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
 
 /* ============================================
    Component Classes - Plain CSS
@@ -123,6 +128,55 @@ body {
 
 .card:hover {
   box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.5);
+}
+
+/* Dropdown menu - Glassmorphism with high contrast for readability */
+.dropdown-menu {
+  background: linear-gradient(135deg, rgba(5, 8, 22, 0.95), rgba(15, 20, 35, 0.9));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease-in-out;
+}
+
+.dropdown-menu.show {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+
+/* Dropdown item */
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  color: hsl(var(--foreground));
+  border-radius: 0.5rem;
+  margin: 0.25rem;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: hsl(var(--primary));
+}
+
+.dropdown-item.selected {
+  background: rgba(34, 211, 238, 0.15); /* Primary color with low opacity */
+  color: hsl(var(--primary));
+  font-weight: 500;
+}
+
+/* Dropdown separator */
+.dropdown-separator {
+  padding: 0.375rem 0.75rem;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  background: rgba(255, 255, 255, 0.03);
+  margin: 0.25rem;
+  border-radius: 0.375rem;
 }
 
 /* Badge component - improved with accent colors */

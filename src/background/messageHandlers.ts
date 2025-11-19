@@ -168,7 +168,7 @@ export function handleOpenSidePanel(tabId: number, sendResponse: (response: any)
     logger.log('[MessageHandlers] 🎯 Opening side panel for tab:', tabId);
 
     // Open the side panel synchronously
-    (chrome.sidePanel as any)
+    chrome.sidePanel
       .open({ tabId })
       .then(() => {
         logger.log('[MessageHandlers] ✅ Side panel opened successfully');

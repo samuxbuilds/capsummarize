@@ -29,6 +29,8 @@ const SPARKLES_ICON_SVG = `
 
 // Track side panel state
 let isSidePanelOpen = false;
+// Track injection state to prevent duplicates
+let isInjecting = false;
 
 /**
  * Creates and injects a floating robot icon into the page
@@ -41,10 +43,21 @@ export function injectFloatingIcon(): void {
     return;
   }
 
+  if (isInjecting) {
+    logger.log('[Floating Icon] Injection already in progress, skipping');
+    return;
+  }
+
+  isInjecting = true;
+  const onComplete = () => {
+    isInjecting = false;
+  };
+
 function setupYouTubePlacement(
   element: HTMLElement,
   inlineStyleFn: (element: HTMLElement) => void,
-  fallbackMount: () => void
+  fallbackMount: () => void,
+  onComplete: () => void
 ): boolean {
   if (!location.hostname.includes('youtube.com')) {
     return false;
@@ -70,23 +83,27 @@ function setupYouTubePlacement(
   };
 
   if (tryAttach()) {
+    onComplete();
     return true;
   }
 
   const observer = new MutationObserver(() => {
     if (tryAttach()) {
       observer.disconnect();
+      onComplete();
     }
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
 
+  // Increased timeout to 60s to handle YouTube ads
   setTimeout(() => {
     observer.disconnect();
     if (!element.isConnected) {
       fallbackMount();
     }
-  }, 4000);
+    onComplete();
+  }, 60000);
 
   return true;
 }
@@ -135,7 +152,357 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
 
 // Removed X/Twitter placement — this module now only handles YouTube and a floating icon
 
-// Removed X/Twitter button styles — not used here anymore
+  // Removed X/Twitter button styles — not used here anymore
+
+  function setupTwitterPlacement(
+    element: HTMLElement,
+    inlineStyleFn: (element: HTMLElement) => void,
+    fallbackMount: () => void,
+    onComplete: () => void
+  ): boolean {
+    if (!location.hostname.includes('x.com') && !location.hostname.includes('twitter.com')) {
+      return false;
+    }
+
+    // User requested to place before the "Grok actions" button
+    // We look for the button with aria-label="Grok actions"
+    const selectors = [
+      'button[aria-label="Grok actions"]',
+      '[data-testid="GrokDrawerHeader"] button' // Fallback to buttons in header
+    ];
+
+    const tryAttach = (): boolean => {
+      // First try to find the specific Grok actions button
+      const grokButton = document.querySelector('button[aria-label="Grok actions"]');
+      
+      if (grokButton) {
+        // We want to insert BEFORE this button's container if possible, or just before the button itself.
+        // Looking at the structure provided:
+        // <div class="css-175oi2r r-18u37iz r-1h0z5md"><button ...>
+        // The button is inside a div. We should probably insert before that div if we can find it,
+        // or just before the button if it's a direct child of a flex container.
+        
+        const parent = grokButton.parentElement;
+        if (parent) {
+           // Check if parent is the flex container holding the buttons
+           // The structure shows: 
+           // <div class="css-175oi2r r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep">
+           //   <div class="css-175oi2r r-18u37iz r-1h0z5md"><button ...></div>
+           //   <div class="css-175oi2r r-1awozwy r-6koalj r-18u37iz">...</div>
+           // </div>
+           
+           // So we likely want to insert before the parent of the button (the div wrapper)
+           // if that parent is a child of the main row.
+           
+           const grandParent = parent.parentElement;
+           if (grandParent) {
+             inlineStyleFn(element);
+             grandParent.insertBefore(element, parent);
+             return true;
+           }
+           
+           // Fallback: insert before the button directly
+           inlineStyleFn(element);
+           parent.insertBefore(element, grokButton);
+           return true;
+        }
+      }
+
+      // Fallback to previous method if specific button not found
+      const header = document.querySelector('[data-testid="GrokDrawerHeader"]');
+      if (header) {
+         inlineStyleFn(element);
+         if (header.firstChild) {
+           header.insertBefore(element, header.firstChild);
+         } else {
+           header.appendChild(element);
+         }
+         return true;
+      }
+
+      return false;
+    };
+
+    if (tryAttach()) {
+      onComplete();
+      return true;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (tryAttach()) {
+        observer.disconnect();
+        onComplete();
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      if (!element.isConnected) {
+        fallbackMount();
+      }
+      onComplete();
+    }, 4000);
+
+    return true;
+  }
+
+  function applyTwitterButtonStyles(element: HTMLElement): void {
+    element.innerHTML = `
+      <span class="ai-summary-inline-icon" style="display:flex;align-items:center;justify-content:center;width:18px;height:18px;">
+        ${SPARKLES_ICON_SVG}
+      </span>
+      <span class="ai-summary-inline-label" style="font-size:14px;font-weight:700;margin-left:6px;">Summarize</span>
+    `;
+
+    // X Style: Text + Icon, similar to "Post" or other actions
+    element.setAttribute(
+      'style',
+      `
+        position: static;
+        width: auto;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(239, 243, 244, 0.1); /* Subtle background */
+        border: 1px solid rgba(239, 243, 244, 0.2);
+        color: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 100;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      `
+    );
+    
+    // Force color to match X's text color
+    element.style.color = 'rgba(239, 243, 244, 1.0)';
+
+    element.onmouseenter = () => {
+      element.style.background = 'rgba(239, 243, 244, 0.2)';
+    };
+
+    element.onmouseleave = () => {
+      element.style.background = 'rgba(239, 243, 244, 0.1)';
+    };
+
+    element.dataset.variant = 'twitter-inline';
+  }
+
+  function setupUdemyPlacement(
+    element: HTMLElement,
+    inlineStyleFn: (element: HTMLElement) => void,
+    fallbackMount: () => void,
+    onComplete: () => void
+  ): boolean {
+    if (!location.hostname.includes('udemy.com')) {
+      return false;
+    }
+
+    const selectors = [
+      '[data-purpose="video-controls"]',
+      'div[class*="control-bar--control-bar"]',
+      '.shaka-controls-container',
+      '.video-controls'
+    ];
+
+    const tryAttach = (): boolean => {
+      for (const selector of selectors) {
+        const container = document.querySelector<HTMLElement>(selector);
+        if (!container) continue;
+
+        inlineStyleFn(element);
+        // Udemy controls are often right-aligned or distributed. 
+        // We'll try to insert before the settings/volume or at the end.
+        // Inserting at the beginning is usually safest for visibility.
+        // But for Udemy, let's try to be near the right side controls if possible.
+        
+        // Often the last child is the fullscreen button or similar.
+        // Let's append to the container, but make sure we have a valid container.
+        
+        // Check if container has children
+        if (container.children.length > 0) {
+           // Insert before the last few elements (usually fullscreen/settings)
+           // or just append if it's a flex container
+           container.insertBefore(element, container.lastElementChild);
+        } else {
+           container.appendChild(element);
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (tryAttach()) {
+      onComplete();
+      return true;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (tryAttach()) {
+        observer.disconnect();
+        onComplete();
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      if (!element.isConnected) {
+        fallbackMount();
+      }
+      onComplete();
+    }, 4000);
+
+    return true;
+  }
+
+  function applyUdemyButtonStyles(element: HTMLElement): void {
+    element.innerHTML = `
+      <span class="ai-summary-inline-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;">
+        ${SPARKLES_ICON_SVG}
+      </span>
+      <span class="ai-summary-inline-label" style="font-size:14px;font-weight:700;letter-spacing:0.02em;">Summarize</span>
+    `;
+
+    // Udemy Style: Dark, clean, often white text on dark bg
+    element.setAttribute(
+      'style',
+      `
+        position: static;
+        width: auto;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        height: 32px; /* Match common button height */
+        margin-right: 8px;
+        border-radius: 4px; /* Udemy uses squarer buttons usually */
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Open Sans', -apple-system, sans-serif;
+        font-weight: 700;
+        z-index: 100;
+      `
+    );
+
+    element.onmouseenter = () => {
+      element.style.background = 'rgba(255, 255, 255, 0.3)';
+    };
+
+    element.onmouseleave = () => {
+      element.style.background = 'rgba(255, 255, 255, 0.2)';
+    };
+
+    element.dataset.variant = 'udemy-inline';
+  }
+
+  function setupCourseraPlacement(
+    element: HTMLElement,
+    inlineStyleFn: (element: HTMLElement) => void,
+    fallbackMount: () => void,
+    onComplete: () => void
+  ): boolean {
+    if (!location.hostname.includes('coursera.org')) {
+      return false;
+    }
+
+    const selectors = [
+      '.rc-VideoControls',
+      '.c-video-controls',
+      '.video-js .vjs-control-bar',
+      'div[class*="video-controls"]'
+    ];
+
+    const tryAttach = (): boolean => {
+      for (const selector of selectors) {
+        const container = document.querySelector<HTMLElement>(selector);
+        if (!container) continue;
+
+        inlineStyleFn(element);
+        // Coursera controls usually have a specific order.
+        // We'll append to the end or insert before the settings gear.
+        container.appendChild(element);
+        return true;
+      }
+      return false;
+    };
+
+    if (tryAttach()) {
+      onComplete();
+      return true;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (tryAttach()) {
+        observer.disconnect();
+        onComplete();
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      if (!element.isConnected) {
+        fallbackMount();
+      }
+      onComplete();
+    }, 4000);
+
+    return true;
+  }
+
+  function applyCourseraButtonStyles(element: HTMLElement): void {
+    element.innerHTML = `
+      <span class="ai-summary-inline-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;">
+        ${SPARKLES_ICON_SVG}
+      </span>
+      <span class="ai-summary-inline-label" style="font-size:14px;font-weight:600;">Summarize</span>
+    `;
+
+    // Coursera Style: Blue/White theme
+    element.setAttribute(
+      'style',
+      `
+        position: static;
+        width: auto;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        margin-left: 8px;
+        border-radius: 4px;
+        background: #0056D2; /* Coursera Blue */
+        border: none;
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Source Sans Pro', -apple-system, sans-serif;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      `
+    );
+
+    element.onmouseenter = () => {
+      element.style.background = '#00419e';
+    };
+
+    element.onmouseleave = () => {
+      element.style.background = '#0056D2';
+    };
+
+    element.dataset.variant = 'coursera-inline';
+  }
 
   try {
     // Create the floating icon container
@@ -166,16 +533,33 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       }
     };
 
-    if (setupYouTubePlacement(floatingIcon, applyYouTubeButtonStyles, mountFloatingIcon)) {
+    if (setupYouTubePlacement(floatingIcon, applyYouTubeButtonStyles, mountFloatingIcon, onComplete)) {
       logger.log('[Floating Icon] 🎯 YouTube placement initialized');
       return;
     }
 
+    if (setupUdemyPlacement(floatingIcon, applyUdemyButtonStyles, mountFloatingIcon, onComplete)) {
+      logger.log('[Floating Icon] 🎯 Udemy placement initialized');
+      return;
+    }
+
+    if (setupCourseraPlacement(floatingIcon, applyCourseraButtonStyles, mountFloatingIcon, onComplete)) {
+      logger.log('[Floating Icon] 🎯 Coursera placement initialized');
+      return;
+    }
+
+    if (setupTwitterPlacement(floatingIcon, applyTwitterButtonStyles, mountFloatingIcon, onComplete)) {
+      logger.log('[Floating Icon] 🎯 Twitter/X placement initialized');
+      return;
+    }
+
     mountFloatingIcon();
+    onComplete();
 
     logger.log('[Floating Icon] ✅ Floating icon injected successfully');
   } catch (err) {
     logger.error('[Floating Icon] ❌ Failed to inject floating icon:', err);
+    isInjecting = false;
   }
 }
 
@@ -349,6 +733,32 @@ function updateIconAppearance(isOpen: boolean): void {
       ? '0 6px 24px rgba(236, 72, 153, 0.45)'
       : '0 4px 18px rgba(15, 23, 42, 0.35)';
     icon.style.transform = isOpen ? 'scale(1.02)' : 'scale(1)';
+    return;
+  }
+
+  if (icon.dataset.variant === 'udemy-inline') {
+    icon.style.background = isOpen
+      ? 'rgba(255, 255, 255, 0.3)'
+      : 'rgba(255, 255, 255, 0.2)';
+    icon.style.borderColor = isOpen ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)';
+    icon.style.transform = isOpen ? 'scale(1.02)' : 'scale(1)';
+    return;
+  }
+
+  if (icon.dataset.variant === 'coursera-inline') {
+    icon.style.background = isOpen
+      ? '#00419e'
+      : '#0056D2';
+    icon.style.transform = isOpen ? 'scale(1.02)' : 'scale(1)';
+    return;
+  }
+
+  if (icon.dataset.variant === 'twitter-inline') {
+    icon.style.background = isOpen
+      ? 'rgba(249, 24, 128, 0.15)' // X pinkish accent
+      : 'transparent';
+    icon.style.color = isOpen ? '#f91880' : 'rgba(239, 243, 244, 1.0)';
+    icon.style.transform = isOpen ? 'scale(1.1)' : 'scale(1)';
     return;
   }
 

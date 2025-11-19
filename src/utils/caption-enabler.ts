@@ -375,11 +375,11 @@ function cleanup(): void {
     logger.log('[CaptionEnabler]    ✓ Removed popstate listener');
   }
 
-  // Remove unload event listener
+  // Remove pagehide event listener
   if (cleanupState.unloadHandler) {
-    window.removeEventListener('unload', cleanupState.unloadHandler);
+    window.removeEventListener('pagehide', cleanupState.unloadHandler);
     cleanupState.unloadHandler = null;
-    logger.log('[CaptionEnabler]    ✓ Removed unload listener');
+    logger.log('[CaptionEnabler]    ✓ Removed pagehide listener');
   }
 
   logger.log('[CaptionEnabler] ✅ Cleanup completed');
@@ -435,9 +435,9 @@ function setupNavigationListeners(onNavigation: () => void): void {
 
   // Handle page unload for cleanup
   cleanupState.unloadHandler = cleanup;
-  window.addEventListener('unload', cleanupState.unloadHandler);
+  window.addEventListener('pagehide', cleanupState.unloadHandler);
 
-  logger.log('[CaptionEnabler] � Navigation listeners registered');
+  logger.log('[CaptionEnabler] 🧭 Navigation listeners registered');
 }
 
 /**

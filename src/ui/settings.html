@@ -308,13 +308,44 @@
                         Choose your preferred summary style for new videos
                       </p>
                     </div>
-                    <select
-                      id="defaultVariantSelect"
-                      class="px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary min-w-[180px] flex-shrink-0"
-                      aria-label="Select default summary style"
-                    >
-                      <option value="default">Loading...</option>
-                    </select>
+                    <div class="relative z-50 min-w-[200px]">
+                      <button
+                        type="button"
+                        id="defaultVariantTrigger"
+                        class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                      >
+                        <div class="flex flex-col items-start overflow-hidden">
+                          <span id="defaultVariantTriggerText" class="block truncate font-medium"
+                            >Default</span
+                          >
+                        </div>
+                        <svg
+                          id="defaultVariantChevron"
+                          class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-hover:text-foreground"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          ></path>
+                        </svg>
+                      </button>
+
+                      <div
+                        id="defaultVariantDropdown"
+                        class="absolute right-0 z-20 mt-1 w-full dropdown-menu !rounded-lg max-h-[300px] overflow-y-auto focus:outline-none hidden origin-top scale-95 opacity-0 transition-all duration-100 p-1"
+                        role="listbox"
+                      >
+                        <!-- Items will be populated dynamically -->
+                      </div>
+                    </div>
+                    <select id="defaultVariantSelect" class="hidden"></select>
                   </div>
 
                   <!-- Include timestamps preference -->

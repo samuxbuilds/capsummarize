@@ -21,6 +21,9 @@ export namespace Manifest {
       default_popup?: string;
       default_title: string;
     };
+    side_panel?: {
+      default_path: string;
+    };
     icons: {
       16: string;
       48: string;

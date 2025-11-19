@@ -50,7 +50,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     } else {
       // Open the side panel
       logger.log('[Background] 🎯 Opening side panel for tab:', tab.id);
-      await (chrome.sidePanel as any).open({ tabId: tab.id });
+      await chrome.sidePanel.open({ tabId: tab.id });
       sidePanelState.set(windowId, true);
       logger.log('[Background] ✅ Side panel opened');
     }
@@ -87,7 +87,7 @@ chrome.tabs.onUpdated.addListener(
 /**
  * Listen for side panel close notifications to update state
  */
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === 'sidePanelClosed') {
     // Reset state for all windows (we don't know which window closed)
     sidePanelState.clear();

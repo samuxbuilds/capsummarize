@@ -12,20 +12,18 @@ import {
   type Provider,
 } from '../services/providerService.js';
 import { getApiBaseUrl as getEnvApiBaseUrl } from '../config/env.js';
-import { loadCustomVariants, loadUserPreferences, type CustomVariant } from './settings.js';
+import { loadCustomVariants, loadUserPreferences } from './settings.js';
 import { getPromptVariants as getPromptVariantsFromAPI } from '../utils/variantsCache.js';
-import APIUtils from '../utils/api.js';
 import {
-  cachePrompts,
-  loadCachedPrompts,
-  hasFreshCache,
   hasReachedDailyLimit,
   getRemainingSummaries,
   getStoredLicenseValidation,
   incrementUsage,
   FREE_DAILY_LIMIT,
-  type CachedPromptVariant,
 } from '../utils/promptsCache.js';
+import { state } from './state/sidePanelState.js';
+import { HistoryList } from './components/HistoryList.js';
+import { TTSController } from './components/TTSController.js';
 
 /**
  * Summary message interface
@@ -49,9 +47,6 @@ interface SummaryMessage {
 interface Elements {
   mainContent: HTMLElement | null;
   historySection: HTMLElement | null;
-  historyList: HTMLElement | null;
-  historyHeader: HTMLElement | null;
-  historyChevron: SVGElement | null;
   clearHistoryBtn: HTMLButtonElement | null;
   readyState: HTMLElement | null;
   loadingState: HTMLElement | null;
@@ -63,6 +58,10 @@ interface Elements {
   summaryContent: HTMLElement | null;
   variantBadge: HTMLElement | null;
   variantSelect: HTMLSelectElement | null;
+  variantTrigger: HTMLButtonElement | null;
+  variantTriggerText: HTMLElement | null;
+  variantDropdown: HTMLElement | null;
+  variantChevron: SVGElement | null;
   variantDescription: HTMLElement | null;
   readTime: HTMLElement | null;
   errorMessage: HTMLElement | null;
@@ -85,26 +84,11 @@ interface Elements {
 }
 
 /**
- * Prompt variant interface
- */
-interface PromptVariant {
-  variant: string;
-  description: string;
-  prompt: string;
-}
-
-/**
  * Cached elements
  */
 let elements: Elements;
-let currentSummary: string | null = null;
-let currentVideoId: string | null = null;
-let currentVtt: string | null = null;
-let currentUrl: string | null = null;
-let currentVariant: string = 'default';
-let includeTimestampsPreference: boolean = false;
-let isSpeaking: boolean = false;
-let selectedHistoryId: string | null = null;
+let historyList: HistoryList;
+let ttsController: TTSController;
 
 /**
  * Cache DOM elements on initialization
@@ -122,9 +106,6 @@ function cacheElements(): void {
   elements = {
     mainContent: get('mainContent'),
     historySection: get('historySection'),
-    historyList: get('historyList'),
-    historyHeader: get('historyHeader'),
-    historyChevron: get('historyChevron') as SVGElement | null,
     clearHistoryBtn: get('clearHistoryBtn') as HTMLButtonElement | null,
     readyState: get('readyState'),
     loadingState: get('loadingState'),
@@ -136,6 +117,10 @@ function cacheElements(): void {
     summaryContent: get('summaryContent'),
     variantBadge: get('variant'),
     variantSelect: get('variantSelect') as HTMLSelectElement | null,
+    variantTrigger: get('variantTrigger') as HTMLButtonElement | null,
+    variantTriggerText: get('variantTriggerText'),
+    variantDropdown: get('variantDropdown'),
+    variantChevron: get('variantChevron') as SVGElement | null,
     variantDescription: get('variantDescription'),
     readTime: get('readTime'),
     errorMessage: get('errorMessage'),
@@ -228,13 +213,11 @@ function showSummary(summary: string, variant: string, readTime?: string): void 
   show(elements.qaSection);
 
   // Stop TTS if speaking when loading new summary
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-    updateSpeakButton(false);
+  if (state.isSpeaking) {
+    ttsController.stop();
   }
 
-  currentSummary = summary;
+  state.currentSummary = summary;
 
   // Parse markdown and update content
   const parsedMarkdown = marked.parse(summary) as string;
@@ -279,9 +262,10 @@ async function updateUsageDisplay(): Promise<void> {
         'text-xs text-muted-foreground px-3 py-1 bg-muted/50 rounded-md mb-3';
 
       // Insert after variant description
-      const variantDescription = document.getElementById('variantDescription');
-      if (variantDescription && variantDescription.parentNode) {
-        variantDescription.parentNode.insertBefore(usageDisplay, variantDescription.nextSibling);
+      // Insert after variant selector
+      const variantTrigger = document.getElementById('variantTrigger');
+      if (variantTrigger && variantTrigger.parentElement && variantTrigger.parentElement.parentNode) {
+        variantTrigger.parentElement.parentNode.insertBefore(usageDisplay, variantTrigger.parentElement.nextSibling);
       }
     }
 
@@ -316,33 +300,83 @@ function showUpgradePrompt(): void {
 
   // Create upgrade prompt HTML
   const upgradeHTML = `
-    <div class="upgrade-prompt flex flex-col items-center justify-center p-8 text-center">
-      <div class="mb-6">
-        <svg class="w-16 h-16 text-primary mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-        </svg>
-        <h3 class="text-xl font-semibold mb-2">Daily Limit Reached</h3>
-        <p class="text-muted-foreground mb-6">You've reached your free limit of ${FREE_DAILY_LIMIT} summaries per day.</p>
-      </div>
-      
-      <div class="space-y-3 w-full max-w-sm">
-        <a href="https://www.capsummarize.app/" target="_blank" 
-           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 w-full">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+    <div class="upgrade-prompt flex flex-col items-center justify-center p-6 text-center h-full animate-in fade-in zoom-in duration-300 overflow-y-auto">
+      <div class="relative mb-6 group">
+        <div class="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
+        <div class="w-16 h-16 bg-card border border-primary/30 rounded-2xl flex items-center justify-center relative shadow-[0_0_30px_rgba(34,211,238,0.15)] group-hover:shadow-[0_0_40px_rgba(34,211,238,0.25)] transition-all duration-500">
+          <svg class="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
           </svg>
-          Upgrade to Pro Lifetime
-        </a>
-        
-        <button id="maybeLaterBtn" 
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4 w-full">
-          Maybe Later
-        </button>
+        </div>
       </div>
       
-      <p class="text-xs text-muted-foreground mt-6">
-        Get unlimited summaries, custom variants, and priority support
+      <h3 class="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">Daily Limit Reached</h3>
+      <p class="text-sm text-muted-foreground mb-6 max-w-[280px] leading-relaxed">
+        You've hit the free limit of <span class="text-foreground font-medium">${FREE_DAILY_LIMIT} summaries</span> today.
       </p>
+      
+      <div class="card w-full max-w-sm text-left mb-4 border border-border/50 shadow-lg">
+        <div class="p-5">
+          <h2 class="text-sm font-semibold mb-4">Pro Lifetime Benefits</h2>
+
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-foreground">Unlimited Summaries</p>
+                <p class="text-xs text-muted-foreground">Unlimited video summaries with no daily limits</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-foreground">All Prompt Variants</p>
+                <p class="text-xs text-muted-foreground">Access to all current and future summary styles</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-foreground">Priority Support</p>
+                <p class="text-xs text-muted-foreground">Get priority help and feature requests</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start gap-3">
+              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-foreground">One-Time Purchase</p>
+                <p class="text-xs text-muted-foreground">Lifetime access with no subscription fees</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-border">
+            <a href="https://www.capsummarize.app/" target="_blank" 
+               class="btn-primary w-full justify-center text-sm py-2.5 shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] transition-all duration-300">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              Get Pro Lifetime License
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <button id="maybeLaterBtn" 
+              class="text-xs text-muted-foreground hover:text-foreground transition-colors py-2 px-4 rounded-lg hover:bg-white/5">
+        Maybe later
+      </button>
     </div>
   `;
 
@@ -381,9 +415,9 @@ function showError(message: string): void {
  * Copy summary to clipboard
  */
 async function handleCopy(): Promise<void> {
-  if (!currentSummary) return;
+  if (!state.currentSummary) return;
 
-  const success = await copyToClipboard(currentSummary);
+  const success = await copyToClipboard(state.currentSummary);
   if (success) {
     showToast('Summary copied to clipboard', 2000, 'success');
   } else {
@@ -395,330 +429,19 @@ async function handleCopy(): Promise<void> {
  * Download summary as markdown file
  */
 function handleDownload(): void {
-  if (!currentSummary) return;
+  if (!state.currentSummary) return;
 
-  const blob = new Blob([currentSummary], { type: 'text/markdown' });
+  const blob = new Blob([state.currentSummary], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `summary-${currentVideoId || Date.now()}.md`;
+  a.download = `summary-${state.currentVideoId || Date.now()}.md`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
   showToast('Summary downloaded', 2000, 'success');
-}
-
-/**
- * Text-to-Speech: Read summary aloud with chunking for large texts
- */
-function handleSpeak(): void {
-  if (!currentSummary) {
-    showToast('No summary available to read', 2000, 'error');
-    return;
-  }
-
-  // If already speaking, stop
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-    updateSpeakButton(false);
-    showToast('Stopped reading', 2000, 'info');
-    return;
-  }
-
-  // Clean the markdown for better TTS output
-  const cleanText = cleanMarkdownForSpeech(currentSummary);
-
-  // Start speaking
-  isSpeaking = true;
-  updateSpeakButton(true);
-  showToast('Reading summary aloud...', 2000, 'info');
-
-  // Use chunked TTS for large texts
-  speakTextInChunks(cleanText, {
-    voiceName: 'Google US English',
-    lang: 'en-US',
-    rate: 1.0,
-    pitch: 1.0,
-    volume: 1.0,
-    onComplete: () => {
-      isSpeaking = false;
-      updateSpeakButton(false);
-      showToast('Finished reading', 2000, 'success');
-    },
-    onError: () => {
-      isSpeaking = false;
-      updateSpeakButton(false);
-      showToast('Error reading summary', 2000, 'error');
-    },
-    onInterrupted: () => {
-      isSpeaking = false;
-      updateSpeakButton(false);
-    },
-  });
-}
-
-/**
- * Speak text in chunks to handle large content
- */
-function speakTextInChunks(
-  text: string,
-  options: {
-    voiceName?: string;
-    lang?: string;
-    rate?: number;
-    pitch?: number;
-    volume?: number;
-    onComplete?: () => void;
-    onError?: () => void;
-    onInterrupted?: () => void;
-  }
-): void {
-  const MAX_CHUNK_SIZE = 1800; // Safe chunk size for chrome.tts
-  const {
-    voiceName = 'Google US English',
-    lang = 'en-US',
-    rate = 1.0,
-    pitch = 1.0,
-    volume = 1.0,
-    onComplete,
-    onError,
-    onInterrupted,
-  } = options;
-
-  // Split text into chunks at sentence boundaries when possible
-  const chunks = splitTextIntoChunks(text, MAX_CHUNK_SIZE);
-  let currentChunkIndex = 0;
-  let wasInterrupted = false;
-
-  function speakNextChunk(): void {
-    if (!isSpeaking || wasInterrupted) {
-      return;
-    }
-
-    if (currentChunkIndex >= chunks.length) {
-      if (onComplete) onComplete();
-      return;
-    }
-
-    const chunk = chunks[currentChunkIndex++] || '';
-
-    const ttsOptions: any = {
-      lang,
-      rate,
-      pitch,
-      volume,
-      enqueue: false,
-      onEvent: (event: any) => {
-        if (event.type === 'end') {
-          // Speak next chunk
-          speakNextChunk();
-        } else if (event.type === 'interrupted' || event.type === 'cancelled') {
-          wasInterrupted = true;
-          if (onInterrupted) onInterrupted();
-        } else if (event.type === 'error') {
-          console.error('TTS error event:', event);
-          wasInterrupted = true;
-          if (onError) onError();
-        }
-      },
-    };
-
-    // Add voiceName only if provided
-    if (voiceName) {
-      ttsOptions.voiceName = voiceName;
-    }
-
-    chrome.tts.speak(chunk, ttsOptions, () => {
-      if (chrome.runtime.lastError) {
-        console.error('TTS callback error:', chrome.runtime.lastError.message);
-        // Try web speech API as fallback
-        if (chunk) {
-          tryWebSpeechFallback(chunk, { lang, rate, pitch });
-        }
-      }
-    });
-  }
-
-  // Start speaking the first chunk
-  speakNextChunk();
-}
-
-/**
- * Split text into chunks at sentence boundaries when possible
- */
-function splitTextIntoChunks(text: string, maxSize: number): string[] {
-  if (text.length <= maxSize) {
-    return [text];
-  }
-
-  const chunks: string[] = [];
-  let remainingText = text;
-
-  while (remainingText.length > 0) {
-    if (remainingText.length <= maxSize) {
-      chunks.push(remainingText);
-      break;
-    }
-
-    // Try to find a sentence boundary within maxSize
-    let splitIndex = maxSize;
-    const sentenceEndings = ['. ', '! ', '? ', '.\n', '!\n', '?\n'];
-
-    // Look for the last sentence ending within the chunk
-    let lastSentenceEnd = -1;
-    for (const ending of sentenceEndings) {
-      const index = remainingText.lastIndexOf(ending, maxSize);
-      if (index > lastSentenceEnd && index > maxSize * 0.5) {
-        // Only split at sentence if it's not too early (past 50% of maxSize)
-        lastSentenceEnd = index + ending.length;
-      }
-    }
-
-    if (lastSentenceEnd > 0) {
-      splitIndex = lastSentenceEnd;
-    } else {
-      // If no sentence boundary found, try to split at a word boundary
-      const lastSpace = remainingText.lastIndexOf(' ', maxSize);
-      if (lastSpace > maxSize * 0.7) {
-        // Only split at word if it's not too early (past 70% of maxSize)
-        splitIndex = lastSpace + 1;
-      }
-    }
-
-    chunks.push(remainingText.slice(0, splitIndex).trim());
-    remainingText = remainingText.slice(splitIndex).trim();
-  }
-
-  return chunks;
-}
-
-/**
- * Fallback to Web Speech API if chrome.tts fails
- */
-function tryWebSpeechFallback(
-  text: string,
-  options: { lang: string; rate: number; pitch: number }
-): void {
-  try {
-    if (window && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = options.lang;
-      utterance.rate = options.rate;
-      utterance.pitch = options.pitch;
-      window.speechSynthesis.speak(utterance);
-      console.log('Using Web Speech API fallback');
-    }
-  } catch (error) {
-    console.error('Web Speech API fallback failed:', error);
-  }
-}
-
-/**
- * Clean markdown text for better TTS output
- */
-function cleanMarkdownForSpeech(markdown: string): string {
-  let text = markdown;
-
-  // Remove markdown headings symbols but keep the text
-  text = text.replace(/^#{1,6}\s+/gm, '');
-
-  // Remove bold/italic markers
-  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
-  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
-  text = text.replace(/\*(.+?)\*/g, '$1');
-  text = text.replace(/__(.+?)__/g, '$1');
-  text = text.replace(/_(.+?)_/g, '$1');
-
-  // Remove code blocks
-  text = text.replace(/```[\s\S]*?```/g, '');
-  text = text.replace(/`(.+?)`/g, '$1');
-
-  // Remove links but keep text
-  text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
-
-  // Remove HTML tags
-  text = text.replace(/<[^>]*>/g, '');
-
-  // Remove emojis and special unicode symbols (they get read as descriptions by TTS)
-  // This removes most common emojis, symbols, and pictographs
-  text = text.replace(/[\u{1F600}-\u{1F64F}]/gu, ''); // Emoticons
-  text = text.replace(/[\u{1F300}-\u{1F5FF}]/gu, ''); // Misc Symbols and Pictographs
-  text = text.replace(/[\u{1F680}-\u{1F6FF}]/gu, ''); // Transport and Map
-  text = text.replace(/[\u{1F700}-\u{1F77F}]/gu, ''); // Alchemical Symbols
-  text = text.replace(/[\u{1F780}-\u{1F7FF}]/gu, ''); // Geometric Shapes Extended
-  text = text.replace(/[\u{1F800}-\u{1F8FF}]/gu, ''); // Supplemental Arrows-C
-  text = text.replace(/[\u{1F900}-\u{1F9FF}]/gu, ''); // Supplemental Symbols and Pictographs
-  text = text.replace(/[\u{1FA00}-\u{1FA6F}]/gu, ''); // Chess Symbols
-  text = text.replace(/[\u{1FA70}-\u{1FAFF}]/gu, ''); // Symbols and Pictographs Extended-A
-  text = text.replace(/[\u{2600}-\u{26FF}]/gu, ''); // Misc symbols
-  text = text.replace(/[\u{2700}-\u{27BF}]/gu, ''); // Dingbats
-  text = text.replace(/[\u{2300}-\u{23FF}]/gu, ''); // Misc Technical
-  text = text.replace(/[\u{2B50}]/gu, ''); // Star and other symbols
-  text = text.replace(/[\u{FE0F}]/gu, ''); // Variation Selector
-
-  // Remove common symbols that TTS reads aloud
-  text = text.replace(/[→←↑↓↔⇒⇐⇑⇓⇔]/g, ''); // Arrows
-  text = text.replace(/[✓✔✕✖✗✘]/g, ''); // Check marks and X marks
-  text = text.replace(/[★☆⭐]/g, ''); // Stars
-  text = text.replace(/[♠♣♥♦]/g, ''); // Card suits
-  text = text.replace(/[©®™]/g, ''); // Copyright, trademark
-  text = text.replace(/[•◦▪▫]/g, ''); // Bullet variants
-  text = text.replace(/[【】〖〗]/g, ''); // Special brackets
-
-  // Convert bullet points to natural speech
-  text = text.replace(/^[\*\-\+]\s+/gm, '');
-
-  // Convert numbered lists to natural speech
-  text = text.replace(/^\d+\.\s+/gm, '');
-
-  // Remove horizontal rules
-  text = text.replace(/^[-_*]{3,}$/gm, '');
-
-  // Remove blockquote markers
-  text = text.replace(/^>\s+/gm, '');
-
-  // Clean up extra whitespace and punctuation
-  text = text.replace(/\n\n+/g, '. ');
-  text = text.replace(/\n/g, '. ');
-  text = text.replace(/\s\s+/g, ' ');
-  text = text.replace(/\.{2,}/g, '.');
-  text = text.replace(/\.\s*\./g, '.');
-  text = text.trim();
-
-  return text;
-}
-
-/**
- * Update speak button icon based on speaking state
- */
-function updateSpeakButton(speaking: boolean): void {
-  if (!elements.speakBtn) return;
-
-  const svg = elements.speakBtn.querySelector('svg');
-  if (!svg) return;
-
-  if (speaking) {
-    // Change to stop icon
-    elements.speakBtn.title = 'Stop reading';
-    elements.speakBtn.setAttribute('aria-label', 'Stop reading aloud');
-    svg.innerHTML = `
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z">
-      </path>
-    `;
-  } else {
-    // Change to play icon
-    elements.speakBtn.title = 'Read summary aloud';
-    elements.speakBtn.setAttribute('aria-label', 'Read summary aloud');
-    svg.innerHTML = `
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z">
-      </path>
-    `;
-  }
 }
 
 /**
@@ -732,7 +455,7 @@ async function getCurrentPromptTemplate(): Promise<string | null> {
       timestamp: number;
     }>('currentPromptTemplate');
 
-    if (stored && stored.variant === currentVariant) {
+    if (stored && stored.variant === state.currentVariant) {
       return stored.template;
     }
 
@@ -776,12 +499,9 @@ async function handleVariantChange(): Promise<void> {
 
   const selectedVariant = elements.variantSelect.value;
 
-  // Update description text
-  updateVariantDescription();
+  if (!state.currentVtt || selectedVariant === state.currentVariant) return;
 
-  if (!currentVtt || selectedVariant === currentVariant) return;
-
-  currentVariant = selectedVariant;
+  state.currentVariant = selectedVariant;
 
   // Get the prompt template for the selected variant and store it
   const promptTemplate = getSelectedPromptTemplate();
@@ -796,10 +516,8 @@ async function handleVariantChange(): Promise<void> {
   }
 
   // Stop TTS if speaking
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-    updateSpeakButton(false);
+  if (state.isSpeaking) {
+    ttsController.stop();
   }
 }
 
@@ -811,7 +529,7 @@ async function handleAskQuestion(): Promise<void> {
 
   const question = elements.questionInput.value.trim();
 
-  if (!question || !currentVtt) {
+  if (!question || !state.currentVtt) {
     showToast('Please enter a question', 2000, 'error');
     return;
   }
@@ -824,8 +542,8 @@ async function handleAskQuestion(): Promise<void> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        vtt: currentVtt,
-        url: currentUrl,
+        vtt: state.currentVtt,
+        url: state.currentUrl,
         question: question,
       }),
     });
@@ -876,21 +594,79 @@ function handleClearQa(): void {
 }
 
 /**
+ * Toggle custom variant dropdown
+ */
+function toggleVariantDropdown(): void {
+  if (!elements.variantDropdown || !elements.variantChevron) return;
+
+  const isHidden = elements.variantDropdown.classList.contains('hidden');
+
+  if (isHidden) {
+    // Open
+    elements.variantDropdown.classList.remove('hidden');
+    // Small delay to allow display:block to apply before opacity transition
+    requestAnimationFrame(() => {
+      if (elements.variantDropdown) {
+        elements.variantDropdown.classList.remove('opacity-0', 'scale-95');
+        elements.variantDropdown.classList.add('opacity-100', 'scale-100');
+      }
+    });
+    elements.variantTrigger?.setAttribute('aria-expanded', 'true');
+    if (elements.variantChevron) {
+      elements.variantChevron.style.transform = 'rotate(180deg)';
+    }
+  } else {
+    closeVariantDropdown();
+  }
+}
+
+/**
+ * Close custom variant dropdown
+ */
+function closeVariantDropdown(): void {
+  if (!elements.variantDropdown || !elements.variantChevron) return;
+
+  elements.variantDropdown.classList.remove('opacity-100', 'scale-100');
+  elements.variantDropdown.classList.add('opacity-0', 'scale-95');
+
+  setTimeout(() => {
+    if (elements.variantDropdown) {
+      elements.variantDropdown.classList.add('hidden');
+    }
+  }, 100); // Match transition duration
+
+  elements.variantTrigger?.setAttribute('aria-expanded', 'false');
+  if (elements.variantChevron) {
+    elements.variantChevron.style.transform = 'rotate(0deg)';
+  }
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
  * Load available prompt variants from API with caching
  */
 async function loadPromptVariants(): Promise<void> {
-  if (!elements.variantSelect) return;
+  if (!elements.variantDropdown) return;
 
   try {
     // Load user preferences to get default variant
     const userPreferences = await loadUserPreferences();
     const defaultVariant = userPreferences?.defaultVariant || 'default';
-    includeTimestampsPreference = !!userPreferences?.includeTimestamps;
+    state.includeTimestampsPreference = !!userPreferences?.includeTimestamps;
 
     // Load custom variants from IndexedDB
     const customVariants = await loadCustomVariants();
 
     // Clear existing options
+    elements.variantDropdown.innerHTML = '';
     if (elements.variantSelect) {
       elements.variantSelect.innerHTML = '';
     }
@@ -899,52 +675,69 @@ async function loadPromptVariants(): Promise<void> {
     console.log('[Sidepanel] Loading prompt variants from API...');
     const systemVariants = await getPromptVariantsFromAPI();
 
-    // Add system variants first
-    systemVariants.forEach((variant) => {
-      const option = document.createElement('option');
-      option.value = variant.variant;
-      option.textContent = variant.label;
-      option.dataset.description = variant.description;
-      option.dataset.prompt = variant.prompt; // Store the actual prompt template
-      option.dataset.isCustom = 'false';
+    const renderOption = (variant: any, isCustom: boolean) => {
+      // Populate custom dropdown item
+      const item = document.createElement('div');
+      item.className = 'dropdown-item';
+      item.setAttribute('role', 'option');
+      item.dataset.value = variant.variant;
+      item.dataset.label = variant.label || variant.variant;
+      item.dataset.prompt = variant.prompt;
+      item.dataset.description = variant.description;
 
-      // Select the user's preferred default variant
       if (variant.variant === defaultVariant) {
-        option.selected = true;
-        currentVariant = variant.variant;
+        item.setAttribute('aria-selected', 'true');
+        item.classList.add('selected');
+        // Update trigger text initially
+        if (elements.variantTriggerText) {
+          elements.variantTriggerText.textContent = variant.label || variant.variant;
+        }
+        state.currentVariant = variant.variant;
       }
 
-      elements.variantSelect?.appendChild(option);
-    });
+      const label = variant.label || variant.variant;
+      const customBadge = isCustom
+        ? '<span class="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Custom</span>'
+        : '';
 
-    // Add separator if there are custom variants
+      item.innerHTML = `
+        <div class="font-medium text-sm text-foreground group-hover:text-primary transition-colors flex items-center">
+          ${escapeHtml(label)}
+          ${customBadge}
+        </div>
+        <div class="text-xs text-muted-foreground mt-0.5 leading-relaxed">${escapeHtml(variant.description)}</div>
+      `;
+
+      item.addEventListener('click', () => {
+        handleVariantSelection(variant.variant, label);
+      });
+
+      elements.variantDropdown?.appendChild(item);
+
+      // Keep hidden select synced for compatibility if needed
+      if (elements.variantSelect) {
+        const option = document.createElement('option');
+        option.value = variant.variant;
+        option.textContent = label;
+        option.dataset.prompt = variant.prompt;
+        if (variant.variant === defaultVariant) option.selected = true;
+        elements.variantSelect.appendChild(option);
+      }
+    };
+
+    // Render system variants
+    systemVariants.forEach((variant) => renderOption(variant, false));
+
+    // Add separator if there are custom variants (visual only in custom dropdown)
     if (customVariants.length > 0) {
-      const separator = document.createElement('option');
-      separator.disabled = true;
-      separator.textContent = '── Custom Variants ──';
-      elements.variantSelect.appendChild(separator);
+      const separator = document.createElement('div');
+      separator.className = 'dropdown-separator';
+      separator.textContent = 'Custom Variants';
+      elements.variantDropdown.appendChild(separator);
     }
 
-    // Add custom variants
-    customVariants.forEach((variant) => {
-      const option = document.createElement('option');
-      option.value = variant.variant;
-      option.textContent = variant.variant; // Use variant name as display text
-      option.dataset.description = variant.description;
-      option.dataset.prompt = variant.prompt;
-      option.dataset.isCustom = 'true';
-
-      // Select if this was the user's preferred variant
-      if (variant.variant === defaultVariant) {
-        option.selected = true;
-        currentVariant = variant.variant;
-      }
-
-      elements.variantSelect?.appendChild(option);
-    });
-
-    // Update variant description
-    updateVariantDescription();
+    // Render custom variants
+    customVariants.forEach((variant) => renderOption(variant, true));
 
     console.log(
       `[Sidepanel] Loaded ${systemVariants.length} system variants and ${customVariants.length} custom variants`
@@ -956,17 +749,29 @@ async function loadPromptVariants(): Promise<void> {
 }
 
 /**
- * Update the variant description based on selected option
+ * Handle variant selection from custom dropdown
  */
-function updateVariantDescription(): void {
-  if (!elements.variantSelect || !elements.variantDescription) return;
-
-  const selectedOption = elements.variantSelect.selectedOptions[0];
-  if (selectedOption && selectedOption.dataset.description) {
-    elements.variantDescription.textContent = selectedOption.dataset.description;
-  } else {
-    elements.variantDescription.textContent = 'Select a summary style to see its description';
+function handleVariantSelection(variantId: string, label: string): void {
+  // Update state
+  if (!state.currentVtt || variantId === state.currentVariant) {
+    // Just update UI if no VTT or same variant
+    state.currentVariant = variantId;
+    if (elements.variantTriggerText) elements.variantTriggerText.textContent = label;
+    closeVariantDropdown();
+    return;
   }
+
+  state.currentVariant = variantId;
+  if (elements.variantTriggerText) elements.variantTriggerText.textContent = label;
+
+  // Sync hidden select
+  if (elements.variantSelect) elements.variantSelect.value = variantId;
+
+  // Close dropdown
+  closeVariantDropdown();
+
+  // Trigger regeneration
+  handleVariantChange();
 }
 
 /**
@@ -994,9 +799,9 @@ async function handleRetry(): Promise<void> {
 
     if (response?.vtt) {
       // VTT found! Store it and show ready state
-      currentVtt = response.vtt;
-      currentUrl = response.url || currentTab.url;
-      clearHistorySelection();
+      state.currentVtt = response.vtt;
+      state.currentUrl = response.url || currentTab.url || null;
+      state.clearHistorySelection();
       console.log('[Sidepanel] ✅ VTT found on retry:', response.vtt.length, 'bytes');
       showReady();
       showToast('Subtitles found! Select a style and provider.', 2000, 'success');
@@ -1015,10 +820,8 @@ async function handleRetry(): Promise<void> {
  */
 function handleClose(): void {
   // Stop TTS if speaking
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-    updateSpeakButton(false);
+  if (state.isSpeaking) {
+    ttsController.stop();
   }
 
   // Notify background that panel is closing
@@ -1033,26 +836,19 @@ function handleClose(): void {
  * Get transcript text from VTT
  */
 function getTranscriptText(): string | null {
-  if (!currentVtt) return null;
-  const removeTimestamps = !includeTimestampsPreference;
-  const transcript = extractTextFromVTT(currentVtt, removeTimestamps);
+  if (!state.currentVtt) return null;
+  const removeTimestamps = !state.includeTimestampsPreference;
+  const transcript = extractTextFromVTT(state.currentVtt, removeTimestamps);
   return transcript && transcript.trim() ? transcript : null;
 }
 
 async function refreshUserPreferences(): Promise<void> {
   try {
     const preferences = await loadUserPreferences();
-    includeTimestampsPreference = !!preferences?.includeTimestamps;
+    state.includeTimestampsPreference = !!preferences?.includeTimestamps;
   } catch (error) {
     console.error('[Sidepanel] Failed to refresh user preferences:', error);
   }
-}
-
-function clearHistorySelection(): void {
-  selectedHistoryId = null;
-  document.querySelectorAll('.history-card.selected').forEach((card) => {
-    card.classList.remove('selected');
-  });
 }
 
 async function refreshCurrentTabVTT(): Promise<boolean> {
@@ -1071,9 +867,9 @@ async function refreshCurrentTabVTT(): Promise<boolean> {
     });
 
     if (response?.vtt) {
-      currentVtt = response.vtt;
-      currentUrl = response.url || currentTab.url || null;
-      clearHistorySelection();
+      state.currentVtt = response.vtt;
+      state.currentUrl = response.url || currentTab.url || null;
+      state.clearHistorySelection();
       console.log('[Sidepanel] 🔄 Refreshed VTT from active tab');
       return true;
     }
@@ -1127,7 +923,7 @@ async function handleOpenProvider(provider: Provider): Promise<void> {
 
     await refreshUserPreferences();
 
-    if (!selectedHistoryId) {
+    if (!state.selectedHistoryId) {
       await refreshCurrentTabVTT();
     }
 
@@ -1219,9 +1015,9 @@ function setupMessageListener(): void {
         case 'summary':
           if (summaryMsg.data) {
             // Store VTT and URL for variant changes and Q&A
-            if (summaryMsg.data.vtt) currentVtt = summaryMsg.data.vtt;
-            if (summaryMsg.data.url) currentUrl = summaryMsg.data.url;
-            if (summaryMsg.data.variant) currentVariant = summaryMsg.data.variant;
+            if (summaryMsg.data.vtt) state.currentVtt = summaryMsg.data.vtt;
+            if (summaryMsg.data.url) state.currentUrl = summaryMsg.data.url;
+            if (summaryMsg.data.variant) state.currentVariant = summaryMsg.data.variant;
 
             showSummary(
               summaryMsg.data.summary,
@@ -1294,9 +1090,25 @@ function generateProviderButtons(): void {
  * Setup event listeners
  */
 function setupEventListeners(): void {
-  if (elements.variantSelect) {
-    elements.variantSelect.addEventListener('change', handleVariantChange);
+  if (elements.variantTrigger) {
+    elements.variantTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleVariantDropdown();
+    });
   }
+
+  document.addEventListener('click', (e) => {
+    if (elements.variantDropdown && !elements.variantDropdown.classList.contains('hidden')) {
+      const target = e.target as HTMLElement;
+      if (
+        !elements.variantDropdown.contains(target) &&
+        !elements.variantTrigger?.contains(target)
+      ) {
+        closeVariantDropdown();
+      }
+    }
+  });
+
   if (elements.settingsBtn) {
     elements.settingsBtn.addEventListener('click', () => {
       window.location.href = 'settings.html';
@@ -1307,9 +1119,6 @@ function setupEventListeners(): void {
   }
   if (elements.retryBtn) {
     elements.retryBtn.addEventListener('click', handleRetry);
-  }
-  if (elements.speakBtn) {
-    elements.speakBtn.addEventListener('click', handleSpeak);
   }
   if (elements.copyBtn) {
     elements.copyBtn.addEventListener('click', handleCopy);
@@ -1323,26 +1132,24 @@ function setupEventListeners(): void {
   if (elements.clearQaBtn) {
     elements.clearQaBtn.addEventListener('click', handleClearQa);
   }
+
+  // Use HistoryList component
+  historyList = new HistoryList(
+    'historySection',
+    'historyList',
+    'historyChevron',
+    'historyHeader',
+    handleHistoryItemClick
+  );
+
+  // Use TTSController component
+  ttsController = new TTSController('speakBtn', (isSpeaking) => {
+    state.isSpeaking = isSpeaking;
+  });
+
+  // Hook up clear history button separately since it's outside the list
   if (elements.clearHistoryBtn) {
     elements.clearHistoryBtn.addEventListener('click', clearAllHistory);
-  }
-
-  // Toggle history section collapse/expand
-  if (elements.historyHeader && elements.historyList && elements.historyChevron) {
-    elements.historyHeader.addEventListener('click', () => {
-      const isHidden = elements.historyList?.classList.contains('hidden');
-      if (isHidden) {
-        elements.historyList?.classList.remove('hidden');
-        if (elements.historyChevron) {
-          elements.historyChevron.style.transform = 'rotate(0deg)';
-        }
-      } else {
-        elements.historyList?.classList.add('hidden');
-        if (elements.historyChevron) {
-          elements.historyChevron.style.transform = 'rotate(-90deg)';
-        }
-      }
-    });
   }
 
   // Handle Enter key in question input
@@ -1390,89 +1197,11 @@ async function loadHistory(): Promise<void> {
     const response = await chrome.runtime.sendMessage({ action: 'getVTTHistory' });
 
     if (response?.success && response.history) {
-      renderHistory(response.history);
+      historyList.render(response.history);
     }
   } catch (err) {
     console.error('[Sidepanel] Failed to load history:', err);
   }
-}
-
-/**
- * Render history items
- */
-function renderHistory(history: any[]): void {
-  if (!history || history.length === 0) {
-    if (elements.historySection) {
-      elements.historySection.classList.add('hidden');
-    }
-    return;
-  }
-
-  if (elements.historySection) {
-    elements.historySection.classList.remove('hidden');
-  }
-  if (elements.historyList) {
-    // Check if the history list is currently expanded
-    const isExpanded = !elements.historyList.classList.contains('hidden');
-
-    elements.historyList.innerHTML = history
-      .map((item) => createHistoryCard(item))
-      .filter(Boolean)
-      .join('');
-
-    // Preserve the expanded/collapsed state, or collapse by default if first load
-    if (!isExpanded) {
-      elements.historyList.classList.add('hidden');
-    }
-  }
-  if (elements.historyChevron && elements.historyList) {
-    // Update chevron rotation based on current state
-    const isExpanded = !elements.historyList.classList.contains('hidden');
-    elements.historyChevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
-  }
-
-  // Attach click listeners
-  if (elements.historyList) {
-    elements.historyList.querySelectorAll('[data-history-id]').forEach((card: Element) => {
-      card.addEventListener('click', () => {
-        const historyId = card.getAttribute('data-history-id');
-        if (historyId) {
-          handleHistoryItemClick(historyId);
-        }
-      });
-    });
-  }
-}
-
-/**
- * Create HTML for a history card
- */
-function createHistoryCard(item: any): string | null {
-  // Extract text from VTT and get first few words
-  let preview = '';
-
-  // If no VTT content, return null
-  if (!item.vttContent) {
-    return null;
-  }
-
-  // Generate preview text
-  if (item.vttContent) {
-    const fullText = extractTextFromVTT(item.vttContent, true);
-    if (fullText) {
-      // Get first 30 words
-      const words = fullText.trim().split(/\s+/).slice(0, 30);
-      preview = words.join(' ') + (words.length >= 30 ? '...' : '');
-    }
-  }
-
-  return `
-    <div class="card hover:bg-card-hover cursor-pointer transition-colors history-card" data-history-id="${item.id}">
-      <div class="flex flex-col gap-2 p-3">
-        <p class="text-sm text-foreground line-clamp-2 leading-relaxed">${escapeHtml(preview)}</p>
-      </div>
-    </div>
-  `;
 }
 
 /**
@@ -1492,24 +1221,23 @@ async function handleHistoryItemClick(historyId: string): Promise<void> {
     }
 
     // Set current VTT and URL
-    currentVtt = historyItem.vttContent;
-    currentUrl = historyItem.pageUrl;
+    state.currentVtt = historyItem.vttContent;
+    state.currentUrl = historyItem.pageUrl;
 
     // Update UI to show selection
-    document.querySelectorAll('.history-card').forEach((card) => {
-      card.classList.remove('selected');
-    });
+    state.clearHistorySelection();
 
+    // Manually add selected class to the specific card in the DOM
     const selectedCard = document.querySelector(`[data-history-id="${historyId}"]`);
     if (selectedCard) {
       selectedCard.classList.add('selected');
     }
 
-    selectedHistoryId = historyId;
+    state.selectedHistoryId = historyId;
 
     // Show ready state so user can select variant and provider
     showReady();
-    showToast('Video loaded - select a summary style and provider', 3000, 'success');
+    showToast('Video loaded - select a style and provider', 3000, 'success');
   } catch (err) {
     console.error('[Sidepanel] Failed to load history item:', err);
     showToast('Failed to load video from history', 2000, 'error');
@@ -1527,12 +1255,7 @@ async function clearAllHistory(): Promise<void> {
     const response = await chrome.runtime.sendMessage({ action: 'clearVTTHistory' });
 
     if (response?.success) {
-      if (elements.historySection) {
-        elements.historySection.classList.add('hidden');
-      }
-      if (elements.historyList) {
-        elements.historyList.innerHTML = '';
-      }
+      historyList.clear();
       showToast('History cleared', 2000, 'success');
     } else {
       showToast('Failed to clear history', 3000, 'error');
@@ -1541,15 +1264,6 @@ async function clearAllHistory(): Promise<void> {
     console.error('[Sidepanel] Failed to clear history:', err);
     showToast('Failed to clear history', 3000, 'error');
   }
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**
@@ -1583,11 +1297,11 @@ async function initialize(): Promise<void> {
       });
 
       if (response?.vtt) {
-        currentVtt = response.vtt;
+        state.currentVtt = response.vtt;
         if (currentTab?.url) {
-          currentUrl = currentTab.url;
+          state.currentUrl = currentTab.url;
         }
-        clearHistorySelection();
+        state.clearHistorySelection();
         console.log('[Sidepanel] Retrieved VTT from background:', response.vtt.length, 'bytes');
       }
     } catch (err) {
@@ -1601,12 +1315,12 @@ async function initialize(): Promise<void> {
       const { type, data, error, videoId } = pendingSummary;
 
       if (videoId) {
-        currentVideoId = videoId;
+        state.currentVideoId = videoId;
       }
 
       // Store VTT and URL for variant changes and Q&A
-      if (data?.vtt) currentVtt = data.vtt;
-      if (data?.url) currentUrl = data.url;
+      if (data?.vtt) state.currentVtt = data.vtt;
+      if (data?.url) state.currentUrl = data.url;
 
       switch (type) {
         case 'loading':
@@ -1614,7 +1328,7 @@ async function initialize(): Promise<void> {
           break;
         case 'summary':
           if (data) {
-            currentVariant = data.variant || 'default';
+            state.currentVariant = data.variant || 'default';
             showSummary(data.summary, data.variant || 'default', data.readTime);
           }
           break;
@@ -1697,28 +1411,5 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     (window as any).tabUpdateTimeout = setTimeout(() => {
       updateSidepanelState();
     }, 500);
-  }
-});
-
-// Cleanup TTS when page unloads or becomes hidden
-window.addEventListener('beforeunload', () => {
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-  }
-});
-
-window.addEventListener('pagehide', () => {
-  if (isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-  }
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && isSpeaking) {
-    chrome.tts.stop();
-    isSpeaking = false;
-    updateSpeakButton(false);
   }
 });

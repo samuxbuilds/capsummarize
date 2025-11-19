@@ -239,6 +239,18 @@ class APIUtils {
       success: boolean;
       prompts: Array<{ variant: string; description: string; prompt: string }>;
     };
+    
+    // Validate response structure
+    if (!response || typeof response !== 'object') {
+      logger.error('Invalid API response for /prompts:', response);
+      throw new APIError('Invalid response format from prompts API', 500);
+    }
+    
+    if (!Array.isArray(response.prompts)) {
+      logger.error('API response missing prompts array:', response);
+      throw new APIError('Response missing prompts array', 500);
+    }
+    
     return response.prompts;
   }
 

@@ -44,6 +44,7 @@ export async function getPromptVariants(): Promise<PromptVariant[]> {
     // Cache miss or expired, fetch from API
     logger.info('Fetching prompt variants from API');
     const prompts = await api.getPrompts();
+    logger.info('Received prompts from API:', prompts);
 
     // Transform API response to UI format, keeping the prompt template
     const variants: PromptVariant[] = prompts.map((prompt) => ({

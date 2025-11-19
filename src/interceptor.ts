@@ -38,8 +38,8 @@ import { logger } from './utils/logger';
 /**
  * Prevent double-injection of the interceptor script
  */
-if (!(window as any).__vttInterceptorLoaded) {
-  (window as any).__vttInterceptorLoaded = true;
+if (!window.__vttInterceptorLoaded) {
+  window.__vttInterceptorLoaded = true;
 
   /**
    * Header name used to mark requests that should skip interception
@@ -337,7 +337,7 @@ if (!(window as any).__vttInterceptorLoaded) {
    * - send(): Adds readystatechange listener to extract VTT content from response
    */
   (function patchXHR() {
-    const XHR = XMLHttpRequest.prototype as any;
+    const XHR = XMLHttpRequest.prototype;
     const originalOpen = XHR.open;
     const originalSend = XHR.send;
     const originalSetRequestHeader = XHR.setRequestHeader;
@@ -354,8 +354,8 @@ if (!(window as any).__vttInterceptorLoaded) {
       password?: string | null
     ) {
       // Store method and URL on the XHR instance for later access
-      (this as any).__vttMethod = method;
-      (this as any).__vttUrl = url;
+      this.__vttMethod = method;
+      this.__vttUrl = url;
       return originalOpen.apply(this, arguments as any);
     };
 
@@ -366,7 +366,7 @@ if (!(window as any).__vttInterceptorLoaded) {
       // Allow internal requests to set the skip header to bypass interception
       try {
         if (header && header.toLowerCase() === SKIP_HEADER) {
-          (this as any).__vttSkip = true;
+          this.__vttSkip = true;
         }
       } catch {}
       return originalSetRequestHeader.apply(this, arguments as any);
@@ -377,8 +377,8 @@ if (!(window as any).__vttInterceptorLoaded) {
      * This is used to extract the VTT content from the XHR response.
      */
     XHR.send = function (this: XMLHttpRequest, body?: Document | BodyInit | null) {
-      const url = (this as any).__vttUrl as string | undefined;
-      const skip = !!(this as any).__vttSkip;
+      const url = this.__vttUrl as string | undefined;
+      const skip = !!this.__vttSkip;
 
       /**
        * Handles XHR readystate changes to extract VTT content when request completes
@@ -387,7 +387,7 @@ if (!(window as any).__vttInterceptorLoaded) {
         try {
           // Only process completed requests that haven't been marked to skip
           if (this.readyState === 4 && !skip) {
-            const responseUrl = (this as any).responseURL || url || '';
+            const responseUrl = this.responseURL || url || '';
             const contentType = this.getResponseHeader
               ? this.getResponseHeader('content-type')
               : null;

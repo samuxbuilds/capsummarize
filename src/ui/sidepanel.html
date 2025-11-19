@@ -9,9 +9,12 @@
     />
     <title>CapSummarize - AI Video Summaries</title>
     <!-- Load Inter Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="../styles/globals.css" />
   </head>
 
@@ -90,29 +93,52 @@
       >
         <!-- Ready State - Before Summary Generation -->
         <div id="readyState" class="hidden fade-in">
-          <div class="card space-y-6 overflow-visible">
+          <div class="card space-y-6 overflow-visible relative z-10">
             <div class="space-y-5 p-6 m-0 overflow-visible">
               <!-- Summary Style Selector -->
-              <div class="space-y-3 pb-4 border-b border-border">
-                <label for="variantSelect" class="text-sm font-semibold text-foreground block"
+              <div class="space-y-3 pb-4 border-b border-border relative z-50">
+                <label for="variantTrigger" class="text-sm font-semibold text-foreground block"
                   >Choose summary style</label
                 >
-                <select
-                  id="variantSelect"
-                  class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  aria-label="Select summary variant"
-                >
-                  <option value="default">Default</option>
-                  <!-- Will be populated dynamically -->
-                </select>
-                <div
-                  id="variantDescription"
-                  class="text-xs text-muted-foreground leading-relaxed p-3 bg-muted/10 rounded-lg"
-                  role="region"
-                  aria-live="polite"
-                >
-                  Select a summary style to see its description
+                <div class="relative z-50">
+                  <button
+                    type="button"
+                    id="variantTrigger"
+                    class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                  >
+                    <div class="flex flex-col items-start overflow-hidden">
+                      <span id="variantTriggerText" class="block truncate font-medium"
+                        >Default</span
+                      >
+                    </div>
+                    <svg
+                      id="variantChevron"
+                      class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-hover:text-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
+                    </svg>
+                  </button>
+
+                  <div
+                    id="variantDropdown"
+                    class="absolute z-20 mt-1 w-full dropdown-menu !rounded-lg max-h-[300px] overflow-y-auto focus:outline-none hidden origin-top scale-95 opacity-0 transition-all duration-100 p-1"
+                    role="listbox"
+                  >
+                    <!-- Items will be populated dynamically -->
+                  </div>
                 </div>
+                <!-- Hidden select to maintain compatibility with existing logic if needed, but we will refactor logic -->
+                <select id="variantSelect" class="hidden"></select>
               </div>
 
               <div class="space-y-5 overflow-visible">

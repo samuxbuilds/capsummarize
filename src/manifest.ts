@@ -13,6 +13,7 @@ const manifest: Manifest.WebExtensionManifest = {
     'https://*.udemy.com/*',
     'https://*.zoom.us/*',
     'https://x.com/*',
+    'https://api.capsummarize.app/*',
   ],
   optional_host_permissions: [
     'https://chatgpt.com/*',
@@ -62,7 +63,6 @@ const manifest: Manifest.WebExtensionManifest = {
   action: {
     default_title: 'CapSummarize',
   },
-  // @ts-ignore - side_panel is a valid Manifest V3 property but not yet in @types/chrome
   side_panel: {
     default_path: 'ui/sidepanel.html',
   },
