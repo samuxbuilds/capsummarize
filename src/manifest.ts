@@ -5,7 +5,7 @@ const manifest: Manifest.WebExtensionManifest = {
   name: 'CapSummarize',
   version: '1.0.0',
   description: 'AI-powered video caption summaries',
-  permissions: ['storage', 'scripting', 'tabs', 'sidePanel'],
+  permissions: ['scripting', 'tabs', 'sidePanel'],
   host_permissions: [
     'https://*.youtube.com/*',
     'https://drive.google.com/*',
