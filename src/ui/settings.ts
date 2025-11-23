@@ -105,6 +105,8 @@ interface SettingsElements {
   licenseEmailInput: HTMLInputElement;
   validateLicenseBtn: HTMLButtonElement;
   clearLicenseBtn: HTMLButtonElement;
+  activateLicenseCard: HTMLElement;
+  proBenefitsCard: HTMLElement;
 }
 
 let elements: SettingsElements;
@@ -140,6 +142,8 @@ async function init(): Promise<void> {
     licenseEmailInput: document.getElementById('licenseEmailInput') as HTMLInputElement,
     validateLicenseBtn: document.getElementById('validateLicenseBtn') as HTMLButtonElement,
     clearLicenseBtn: document.getElementById('clearLicenseBtn') as HTMLButtonElement,
+    activateLicenseCard: document.getElementById('activateLicenseCard') as HTMLElement,
+    proBenefitsCard: document.getElementById('proBenefitsCard') as HTMLElement,
   };
 
   // Initialize SettingsForm
@@ -808,6 +812,9 @@ async function updateLicenseStatus(): Promise<void> {
           <p class="text-xs text-muted-foreground">Enter your license key below to unlock Pro features</p>
         </div>
       `;
+      // Show activation cards when no license
+      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
+      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
       return;
     }
 
@@ -824,6 +831,9 @@ async function updateLicenseStatus(): Promise<void> {
           </div>
         </div>
       `;
+      // Hide activation cards when license is valid
+      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.add('hidden');
+      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.add('hidden');
     } else if (validation.valid) {
       elements.licenseStatus.innerHTML = `
         <div class="text-center p-6 border border-blue-200 bg-blue-50 rounded-lg">
@@ -837,6 +847,9 @@ async function updateLicenseStatus(): Promise<void> {
           </div>
         </div>
       `;
+      // Hide activation cards when license is valid
+      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.add('hidden');
+      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.add('hidden');
     } else {
       elements.licenseStatus.innerHTML = `
         <div class="text-center p-6 border border-red-200 bg-red-50 rounded-lg">
@@ -850,6 +863,9 @@ async function updateLicenseStatus(): Promise<void> {
           </div>
         </div>
       `;
+      // Show activation cards when license is invalid
+      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
+      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
     }
   } catch (error) {
     console.error('[Settings] Failed to update license status:', error);
@@ -862,6 +878,9 @@ async function updateLicenseStatus(): Promise<void> {
         <p class="text-xs text-orange-600">Please refresh the page and try again</p>
       </div>
     `;
+    // Show activation cards on error, just in case
+    if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
+    if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
   }
 }
 

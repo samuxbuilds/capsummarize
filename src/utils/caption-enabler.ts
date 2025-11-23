@@ -48,7 +48,7 @@
  *
  * @module caption-enabler
  * @author CapSummarize Extension
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 import { logger } from './logger';

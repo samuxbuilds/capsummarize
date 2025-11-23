@@ -138,6 +138,9 @@ export class StandardVTTConnector implements VTTConnector {
     // Common subtitle endpoints
     if (/\/(subtitles|captions|cc|subtitle|caption)/i.test(url)) return true;
 
+    // Zoom transcript vtt endpoint
+    if (/\/(vtt)/i.test(url) && /\/(zoom)/i.test(url) && /\/(transcript)/i.test(url)) return true;
+
     // VTT MIME type in URL
     if (url.indexOf('text/vtt') !== -1 || url.indexOf('application/vtt') !== -1) {
       return true;

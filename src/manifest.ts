@@ -3,7 +3,7 @@ import type { Manifest } from './types/manifest.js';
 const manifest: Manifest.WebExtensionManifest = {
   manifest_version: 3,
   name: 'CapSummarize',
-  version: '1.0.0',
+  version: '1.0.1',
   description: 'AI-powered video caption summaries',
   permissions: ['scripting', 'tabs', 'sidePanel'],
   host_permissions: [
