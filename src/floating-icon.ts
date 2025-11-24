@@ -53,6 +53,8 @@ export function injectFloatingIcon(): void {
     isInjecting = false;
   };
 
+
+
 function setupYouTubePlacement(
   element: HTMLElement,
   inlineStyleFn: (element: HTMLElement) => void,
@@ -65,45 +67,42 @@ function setupYouTubePlacement(
 
   const selectors = [
     'ytd-watch-metadata #top-level-buttons-computed',
-    '#above-the-fold #top-row #top-level-buttons-computed',
-    '#top-level-buttons-computed'
+    '#above-the-fold #top-level-buttons-computed',
+    '#top-level-buttons-computed',
   ];
 
-  const tryAttach = (): boolean => {
+  // Try to find any of the selectors
+  const tryMount = (): boolean => {
     for (const selector of selectors) {
       const container = document.querySelector<HTMLElement>(selector);
-      if (!container) continue;
-
-      inlineStyleFn(element);
-      const firstButton = container.firstElementChild;
-      container.insertBefore(element, firstButton ?? null);
-      return true;
+      if (container) {
+        inlineStyleFn(element);
+        const firstButton = container.firstElementChild;
+        container.insertBefore(element, firstButton ?? null);
+        onComplete();
+        return true;
+      }
     }
     return false;
   };
 
-  if (tryAttach()) {
-    onComplete();
-    return true;
-  }
+  if (tryMount()) return true;
 
-  const observer = new MutationObserver(() => {
-    if (tryAttach()) {
-      observer.disconnect();
+  // Poll for element instead of observing entire body
+  let attempts = 0;
+  const maxAttempts = 20; // 10 seconds total
+  const interval = setInterval(() => {
+    attempts++;
+    if (tryMount()) {
+      clearInterval(interval);
+    } else if (attempts >= maxAttempts) {
+      clearInterval(interval);
+      if (!element.isConnected) {
+        fallbackMount();
+      }
       onComplete();
     }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-
-  // Increased timeout to 60s to handle YouTube ads
-  setTimeout(() => {
-    observer.disconnect();
-    if (!element.isConnected) {
-      fallbackMount();
-    }
-    onComplete();
-  }, 60000);
+  }, 500);
 
   return true;
 }
@@ -228,22 +227,21 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       return true;
     }
 
-    const observer = new MutationObserver(() => {
+    // Poll for element
+    let attempts = 0;
+    const maxAttempts = 10; // 5 seconds
+    const interval = setInterval(() => {
+      attempts++;
       if (tryAttach()) {
-        observer.disconnect();
+        clearInterval(interval);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (!element.isConnected) {
+          fallbackMount();
+        }
         onComplete();
       }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    setTimeout(() => {
-      observer.disconnect();
-      if (!element.isConnected) {
-        fallbackMount();
-      }
-      onComplete();
-    }, 4000);
+    }, 500);
 
     return true;
   }
@@ -316,21 +314,10 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
         if (!container) continue;
 
         inlineStyleFn(element);
-        // Udemy controls are often right-aligned or distributed. 
-        // We'll try to insert before the settings/volume or at the end.
-        // Inserting at the beginning is usually safest for visibility.
-        // But for Udemy, let's try to be near the right side controls if possible.
-        
-        // Often the last child is the fullscreen button or similar.
-        // Let's append to the container, but make sure we have a valid container.
-        
-        // Check if container has children
         if (container.children.length > 0) {
-           // Insert before the last few elements (usually fullscreen/settings)
-           // or just append if it's a flex container
-           container.insertBefore(element, container.lastElementChild);
+          container.insertBefore(element, container.lastElementChild);
         } else {
-           container.appendChild(element);
+          container.appendChild(element);
         }
         return true;
       }
@@ -342,22 +329,21 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       return true;
     }
 
-    const observer = new MutationObserver(() => {
+    // Poll for element
+    let attempts = 0;
+    const maxAttempts = 10; // 5 seconds
+    const interval = setInterval(() => {
+      attempts++;
       if (tryAttach()) {
-        observer.disconnect();
+        clearInterval(interval);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (!element.isConnected) {
+          fallbackMount();
+        }
         onComplete();
       }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    setTimeout(() => {
-      observer.disconnect();
-      if (!element.isConnected) {
-        fallbackMount();
-      }
-      onComplete();
-    }, 4000);
+    }, 500);
 
     return true;
   }
@@ -429,8 +415,6 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
         if (!container) continue;
 
         inlineStyleFn(element);
-        // Coursera controls usually have a specific order.
-        // We'll append to the end or insert before the settings gear.
         container.appendChild(element);
         return true;
       }
@@ -442,22 +426,21 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       return true;
     }
 
-    const observer = new MutationObserver(() => {
+    // Poll for element
+    let attempts = 0;
+    const maxAttempts = 10; // 5 seconds
+    const interval = setInterval(() => {
+      attempts++;
       if (tryAttach()) {
-        observer.disconnect();
+        clearInterval(interval);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (!element.isConnected) {
+          fallbackMount();
+        }
         onComplete();
       }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    setTimeout(() => {
-      observer.disconnect();
-      if (!element.isConnected) {
-        fallbackMount();
-      }
-      onComplete();
-    }, 4000);
+    }, 500);
 
     return true;
   }

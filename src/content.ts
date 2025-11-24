@@ -20,6 +20,12 @@
  * @module content
  */
 
+declare global {
+  interface Window {
+    __floatingIconDebounce?: ReturnType<typeof setTimeout> | null;
+  }
+}
+
 import { initializeCaptionEnabler } from './utils/caption-enabler.js';
 import { injectFloatingIcon } from './floating-icon.js';
 import { logger } from './utils/logger';
@@ -134,10 +140,16 @@ window.addEventListener('message', (event: MessageEvent) => {
     logger.log('[Content Script] 📍 VTT content:', content);
 
     // Inject the floating robot icon when captions are found
-    try {
-      injectFloatingIcon();
-    } catch (err) {
-      logger.error('[Content Script] Failed to inject floating icon:', err);
+    // Debounce injection to prevent rapid-fire execution
+    if (!window.__floatingIconDebounce) {
+      window.__floatingIconDebounce = setTimeout(() => {
+        try {
+          injectFloatingIcon();
+        } catch (err) {
+          logger.error('[Content Script] Failed to inject floating icon:', err);
+        }
+        window.__floatingIconDebounce = null;
+      }, 1000);
     }
 
     // Forward valid VTT content to background script

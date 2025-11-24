@@ -5,19 +5,14 @@
 
 // Check if we're in development mode
 const isDevelopment = (): boolean => {
-  // For browser extension, check if manifest is not in production
-  if (typeof chrome !== 'undefined' && chrome.runtime) {
-    // In development, the extension ID might be different or we can check environment
-    return !chrome.runtime.id.includes('production') || process.env.NODE_ENV === 'development';
-  }
-
-  // For server-side code
+  // In the browser extension context, process.env.NODE_ENV is replaced by the build script
+  // We can trust this value to be 'development' or 'production'
   if (typeof process !== 'undefined' && process.env) {
-    return process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+    return process.env.NODE_ENV === 'development';
   }
-
-  // Fallback: assume development
-  return true;
+  
+  // Fallback for safety - default to false (production) if we can't determine
+  return false;
 };
 
 const DEV_MODE = isDevelopment();
@@ -26,8 +21,7 @@ type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 class Logger {
   private shouldLog(): boolean {
-    // TODO - Check If is there any way to check if we are in development mode
-    return false;
+    return DEV_MODE;
   }
 
   private formatMessage(level: LogLevel, ...args: any[]): [string, ...any[]] {
@@ -49,15 +43,13 @@ class Logger {
   }
 
   warn(...args: any[]): void {
-    if (this.shouldLog()) {
-      console.warn(...this.formatMessage('warn', ...args));
-    }
+    // Always show warnings, even in production, as they indicate potential issues
+    console.warn(...this.formatMessage('warn', ...args));
   }
 
   error(...args: any[]): void {
-    if (this.shouldLog()) {
-      console.error(...this.formatMessage('error', ...args));
-    }
+    // Always show errors, even in production, as they indicate critical issues
+    console.error(...this.formatMessage('error', ...args));
   }
 
   debug(...args: any[]): void {

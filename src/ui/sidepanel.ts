@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import { animateProgress, copyToClipboard, hide, show, showToast } from './ui-utils.js';
+import { logger } from '../utils/logger.js';
 import StorageUtils from '../utils/storage.js';
 import { extractTextFromVTT } from '../utils/vtt.js';
 import {
@@ -97,7 +98,7 @@ function cacheElements(): void {
   const get = (id: string): HTMLElement | null => {
     const el = document.getElementById(id);
     if (!el) {
-      console.warn(`Element with id "${id}" not found`);
+      logger.warn(`Element with id "${id}" not found`);
       return null;
     }
     return el;
@@ -283,7 +284,7 @@ async function updateUsageDisplay(): Promise<void> {
           : 'text-xs text-muted-foreground px-3 py-1 bg-muted/50 rounded-md mb-3';
     }
   } catch (error) {
-    console.error('[Sidepanel] Failed to update usage display:', error);
+    logger.error('[Sidepanel] Failed to update usage display:', error);
   }
 }
 
@@ -462,7 +463,7 @@ async function getCurrentPromptTemplate(): Promise<string | null> {
     // If no stored template or variant mismatch, get from current selection
     return getSelectedPromptTemplate();
   } catch (error) {
-    console.error('[Sidepanel] Failed to get current prompt template:', error);
+    logger.error('[Sidepanel] Failed to get current prompt template:', error);
     return getSelectedPromptTemplate();
   }
 }
@@ -512,7 +513,7 @@ async function handleVariantChange(): Promise<void> {
       variant: selectedVariant,
       timestamp: Date.now(),
     });
-    console.log(`[Sidepanel] Stored prompt template for variant: ${selectedVariant}`);
+    logger.info(`[Sidepanel] Stored prompt template for variant: ${selectedVariant}`);
   }
 
   // Stop TTS if speaking
@@ -564,7 +565,7 @@ async function handleAskQuestion(): Promise<void> {
       showError(data.error || 'Failed to generate answer');
     }
   } catch (error) {
-    console.error('Failed to ask question:', error);
+    logger.error('Failed to ask question:', error);
     showToast('Failed to communicate with API server', 2000, 'error');
   } finally {
     if (elements.askBtn) {
@@ -672,7 +673,7 @@ async function loadPromptVariants(): Promise<void> {
     }
 
     // Get system variants from API with caching
-    console.log('[Sidepanel] Loading prompt variants from API...');
+    logger.info('[Sidepanel] Loading prompt variants from API...');
     const systemVariants = await getPromptVariantsFromAPI();
 
     const renderOption = (variant: any, isCustom: boolean) => {
@@ -739,11 +740,11 @@ async function loadPromptVariants(): Promise<void> {
     // Render custom variants
     customVariants.forEach((variant) => renderOption(variant, true));
 
-    console.log(
+    logger.info(
       `[Sidepanel] Loaded ${systemVariants.length} system variants and ${customVariants.length} custom variants`
     );
   } catch (error) {
-    console.error('[Sidepanel] Failed to load prompt variants:', error);
+    logger.error('[Sidepanel] Failed to load prompt variants:', error);
     showToast('Failed to load prompt variants', 3000, 'error');
   }
 }
@@ -802,7 +803,7 @@ async function handleRetry(): Promise<void> {
       state.currentVtt = response.vtt;
       state.currentUrl = response.url || currentTab.url || null;
       state.clearHistorySelection();
-      console.log('[Sidepanel] ✅ VTT found on retry:', response.vtt.length, 'bytes');
+      logger.info('[Sidepanel] ✅ VTT found on retry:', response.vtt.length, 'bytes');
       showReady();
       showToast('Subtitles found! Select a style and provider.', 2000, 'success');
     } else {
@@ -810,7 +811,7 @@ async function handleRetry(): Promise<void> {
       showError('No subtitles found. Please ensure the video has captions enabled.');
     }
   } catch (error) {
-    console.error('[Sidepanel] Retry failed:', error);
+    logger.error('[Sidepanel] Retry failed:', error);
     showError('Failed to check for subtitles. Please try again.');
   }
 }
@@ -847,7 +848,7 @@ async function refreshUserPreferences(): Promise<void> {
     const preferences = await loadUserPreferences();
     state.includeTimestampsPreference = !!preferences?.includeTimestamps;
   } catch (error) {
-    console.error('[Sidepanel] Failed to refresh user preferences:', error);
+    logger.error('[Sidepanel] Failed to refresh user preferences:', error);
   }
 }
 
@@ -870,11 +871,11 @@ async function refreshCurrentTabVTT(): Promise<boolean> {
       state.currentVtt = response.vtt;
       state.currentUrl = response.url || currentTab.url || null;
       state.clearHistorySelection();
-      console.log('[Sidepanel] 🔄 Refreshed VTT from active tab');
+      logger.info('[Sidepanel] 🔄 Refreshed VTT from active tab');
       return true;
     }
   } catch (error) {
-    console.error('[Sidepanel] Failed to refresh current tab VTT:', error);
+    logger.error('[Sidepanel] Failed to refresh current tab VTT:', error);
   }
 
   return false;
@@ -901,7 +902,7 @@ async function ensureProviderPermission(provider: Provider): Promise<boolean> {
     showToast(`${getProviderDisplayName(provider)} enabled`, 2000, 'success');
     return true;
   } catch (error) {
-    console.error('[Sidepanel] Failed to request provider permission:', error);
+    logger.error('[Sidepanel] Failed to request provider permission:', error);
     showToast('Unable to request site permission', 2500, 'error');
     return false;
   }
@@ -937,7 +938,7 @@ async function handleOpenProvider(provider: Provider): Promise<void> {
       ?.querySelector(`option[value="${elements.variantSelect.value}"]`)
       ?.getAttribute('data-prompt');
     const finalPrompt = `${prompt}\n\n${transcript}`;
-    console.log('[Sidepanel] Composed prompt:', finalPrompt);
+    logger.info('[Sidepanel] Composed prompt:', finalPrompt);
 
     // Increment usage count for non-licensed users
     if (!licenseValidation.valid) {
@@ -954,7 +955,7 @@ async function handleOpenProvider(provider: Provider): Promise<void> {
     await openAndInject(provider, finalPrompt);
     showToast('Opened provider', 2000, 'success');
   } catch (error) {
-    console.error('[Sidepanel] Error opening provider:', error);
+    logger.error('[Sidepanel] Error opening provider:', error);
     showToast('Failed to open provider', 2000, 'error');
   }
 }
@@ -978,16 +979,16 @@ async function updateSidepanelState(): Promise<void> {
     if ((noSubtitlesVisible || readyStateVisible) && !summaryStateVisible && !errorStateVisible) {
       if (noSubtitlesVisible && hasVTT) {
         // VTT was found! Update to ready state
-        console.log('[Sidepanel] VTT found, updating to ready state');
+        logger.info('[Sidepanel] VTT found, updating to ready state');
         showReady();
       } else if (readyStateVisible && !hasVTT) {
         // VTT was lost! Update to no subtitles state
-        console.log('[Sidepanel] VTT lost, updating to no subtitles state');
+        logger.info('[Sidepanel] VTT lost, updating to no subtitles state');
         showNoSubtitles();
       }
     }
   } catch (error) {
-    console.error('[Sidepanel] Error updating state:', error);
+    logger.error('[Sidepanel] Error updating state:', error);
   }
 }
 
@@ -996,7 +997,7 @@ async function updateSidepanelState(): Promise<void> {
  */
 function setupMessageListener(): void {
   chrome.runtime.onMessage.addListener((message: any) => {
-    console.log('Side panel received message:', message);
+    logger.info('Side panel received message:', message);
 
     // Handle close request from background
     if (message.action === 'closeSidePanel') {
@@ -1032,18 +1033,18 @@ function setupMessageListener(): void {
           break;
 
         default:
-          console.warn('Unknown message type:', message);
+          logger.warn('Unknown message type:', message);
       }
     }
     // Handle VTT found notification
     else if (message.action === 'vttFound') {
-      console.log('[Sidepanel] VTT found on current tab, updating state...');
+      logger.info('[Sidepanel] VTT found on current tab, updating state...');
       void refreshCurrentTabVTT();
       updateSidepanelState();
     }
     // Handle history update notification
     else if (message.action === 'vttHistoryUpdated') {
-      console.log('[Sidepanel] History updated, reloading...');
+      logger.info('[Sidepanel] History updated, reloading...');
       loadHistory();
     }
   });
@@ -1083,7 +1084,7 @@ function generateProviderButtons(): void {
     }
   });
 
-  console.log('[Sidepanel] ✅ Generated provider buttons in all containers');
+  logger.info('[Sidepanel] ✅ Generated provider buttons in all containers');
 }
 
 /**
@@ -1184,7 +1185,7 @@ async function checkVTTStatus(): Promise<boolean> {
 
     return response?.hasVTT ?? false;
   } catch (error) {
-    console.error('[Sidepanel] Error checking VTT status:', error);
+    logger.error('[Sidepanel] Error checking VTT status:', error);
     return false;
   }
 }
@@ -1200,7 +1201,7 @@ async function loadHistory(): Promise<void> {
       historyList.render(response.history);
     }
   } catch (err) {
-    console.error('[Sidepanel] Failed to load history:', err);
+    logger.error('[Sidepanel] Failed to load history:', err);
   }
 }
 
@@ -1239,7 +1240,7 @@ async function handleHistoryItemClick(historyId: string): Promise<void> {
     showReady();
     showToast('Video loaded - select a style and provider', 3000, 'success');
   } catch (err) {
-    console.error('[Sidepanel] Failed to load history item:', err);
+    logger.error('[Sidepanel] Failed to load history item:', err);
     showToast('Failed to load video from history', 2000, 'error');
   }
 }
@@ -1261,7 +1262,7 @@ async function clearAllHistory(): Promise<void> {
       showToast('Failed to clear history', 3000, 'error');
     }
   } catch (err) {
-    console.error('[Sidepanel] Failed to clear history:', err);
+    logger.error('[Sidepanel] Failed to clear history:', err);
     showToast('Failed to clear history', 3000, 'error');
   }
 }
@@ -1271,44 +1272,22 @@ async function clearAllHistory(): Promise<void> {
  */
 async function initialize(): Promise<void> {
   try {
+    // 1. Immediate UI Setup (Critical Path)
     cacheElements();
     setupEventListeners();
     setupMessageListener();
 
-    // Load available prompt variants
-    await loadPromptVariants();
+    // 2. Start background data fetching (Non-blocking)
+    // We don't await these immediately to allow UI to render
+    const backgroundTasks = Promise.all([
+      loadPromptVariants().catch(err => logger.error('Failed to load variants:', err)),
+      updateUsageDisplay().catch(err => logger.error('Failed to update usage:', err)),
+      loadHistory().catch(err => logger.error('Failed to load history:', err))
+    ]);
 
-    // Update usage display
-    await updateUsageDisplay();
-
-    // Load VTT history
-    await loadHistory();
-
-    // Get current tab info
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const currentTab = tabs[0];
-
-    // First, try to get VTT content from current tab
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'getVTTContent',
-        tabId: currentTab?.id,
-        tabUrl: currentTab?.url,
-      });
-
-      if (response?.vtt) {
-        state.currentVtt = response.vtt;
-        if (currentTab?.url) {
-          state.currentUrl = currentTab.url;
-        }
-        state.clearHistorySelection();
-        console.log('[Sidepanel] Retrieved VTT from background:', response.vtt.length, 'bytes');
-      }
-    } catch (err) {
-      console.log('[Sidepanel] Could not get VTT from background:', err);
-    }
-
-    // Check if there's a pending summary in storage
+    // 3. Determine Initial State (Fastest possible path)
+    
+    // Check for pending summary first (local storage is fast)
     const pendingSummary = await StorageUtils.get<any>('pendingSummary');
 
     if (pendingSummary) {
@@ -1340,19 +1319,57 @@ async function initialize(): Promise<void> {
       // Clear pending summary
       await StorageUtils.remove('pendingSummary');
     } else {
-      // No pending summary - check if VTT is available
-      const hasVTT = await checkVTTStatus();
+      // No pending summary - check current tab status
+      // We do this in parallel with background tasks but await it for UI state
+      
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const currentTab = tabs[0];
+      
+      let vttFound = false;
 
-      if (hasVTT) {
-        // Show ready state by default (user can then click generate)
+      // Try to get VTT content from current tab
+      try {
+        if (currentTab?.id) {
+           const response = await chrome.runtime.sendMessage({
+            action: 'getVTTContent',
+            tabId: currentTab.id,
+            tabUrl: currentTab.url,
+          });
+
+          if (response?.vtt) {
+            state.currentVtt = response.vtt;
+            if (currentTab?.url) {
+              state.currentUrl = currentTab.url;
+            }
+            state.clearHistorySelection();
+            logger.info('[Sidepanel] Retrieved VTT from background:', response.vtt.length, 'bytes');
+            vttFound = true;
+          }
+        }
+      } catch (err) {
+        logger.info('[Sidepanel] Could not get VTT from background:', err);
+      }
+
+      if (vttFound) {
         showReady();
       } else {
-        // No subtitles found
-        showNoSubtitles();
+        // Fallback: check generic VTT status if content fetch failed
+        const hasVTT = await checkVTTStatus();
+        if (hasVTT) {
+          showReady();
+        } else {
+          showNoSubtitles();
+        }
       }
     }
+    
+    // Wait for background tasks to complete (optional, just ensuring they finish)
+    // We don't strictly need to await this for the function to return, 
+    // but it's good practice to handle their completion if we were doing more cleanup.
+    // However, for UI responsiveness, we let them complete in the background.
+    
   } catch (error) {
-    console.error('Failed to initialize side panel:', error);
+    logger.error('Failed to initialize side panel:', error);
     showError('Failed to initialize side panel. Please try again.');
   }
 }
@@ -1369,7 +1386,7 @@ if (document.readyState === 'loading') {
  * When user switches tabs, update the sidepanel state based on VTT availability
  */
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  console.log('[Sidepanel] Tab changed to:', activeInfo.tabId);
+  logger.info('[Sidepanel] Tab changed to:', activeInfo.tabId);
 
   try {
     // Get the tab info to check its URL
@@ -1377,7 +1394,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
     // Skip updating if the new tab is a provider URL
     if (tab.url && isProviderURL(tab.url)) {
-      console.log('[Sidepanel] New tab is a provider URL, skipping state update:', tab.url);
+      logger.info('[Sidepanel] New tab is a provider URL, skipping state update:', tab.url);
       return;
     }
 
@@ -1387,7 +1404,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
       updateSidepanelState();
     }, 300);
   } catch (error) {
-    console.error('[Sidepanel] Error in tab activation handler:', error);
+    logger.error('[Sidepanel] Error in tab activation handler:', error);
   }
 });
 
@@ -1398,11 +1415,11 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Only update when page finishes loading and we have a URL
   if (changeInfo.status === 'complete' && tab.url) {
-    console.log('[Sidepanel] Tab updated and page loaded:', tabId);
+    logger.info('[Sidepanel] Tab updated and page loaded:', tabId);
 
     // Skip updating if the URL is a provider URL (fast check, no async needed)
     if (isProviderURL(tab.url)) {
-      console.log('[Sidepanel] Tab URL is a provider URL, skipping state update:', tab.url);
+      logger.info('[Sidepanel] Tab URL is a provider URL, skipping state update:', tab.url);
       return;
     }
 

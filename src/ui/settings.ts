@@ -7,6 +7,7 @@
 
 import StorageUtils from '../utils/storage.js';
 import { showToast } from './ui-utils.js';
+import { logger } from '../utils/logger.js';
 import { getPromptVariants as getPromptVariantsFromAPI } from '../utils/variantsCache.js';
 import {
   getStoredLicenseValidation,
@@ -118,7 +119,7 @@ let userPreferences: UserPreferences = { ...DEFAULT_PREFERENCES };
  * Initialize the settings page
  */
 async function init(): Promise<void> {
-  console.log('[Settings] Initializing settings page');
+  logger.info('[Settings] Initializing settings page');
 
   // Cache DOM elements
   elements = {
@@ -180,7 +181,7 @@ async function init(): Promise<void> {
   // Initialize license status
   await updateLicenseStatus();
 
-  console.log('[Settings] Initialization complete');
+  logger.info('[Settings] Initialization complete');
 }
 
 /**
@@ -382,7 +383,7 @@ async function loadAndRenderVariants(): Promise<void> {
     // Update existing variants list in form for validation
     settingsForm.setExistingVariants(customVariants.map((v) => v.variant));
 
-    console.log('[Settings] Loaded custom variants:', customVariants.length);
+    logger.info('[Settings] Loaded custom variants:', customVariants.length);
 
     // Re-populate variant dropdown to include custom variants
     await populateVariantDropdown();
@@ -711,7 +712,7 @@ async function populateVariantDropdown(): Promise<void> {
       customVariants.forEach((variant) => renderOption(variant, true));
     }
 
-    console.log(`[Settings] Loaded ${variants.length + customVariants.length} variants for dropdown`);
+    logger.info(`[Settings] Loaded ${variants.length + customVariants.length} variants for dropdown`);
   } catch (error) {
     console.error('[Settings] Failed to load variants for dropdown:', error);
     showToast('Failed to load prompt variants', 3000, 'error');
@@ -753,7 +754,7 @@ async function loadPreferences(): Promise<void> {
       elements.includeTimestampsToggle.checked = userPreferences.includeTimestamps;
     }
 
-    console.log('[Settings] Loaded preferences:', userPreferences);
+    logger.info('[Settings] Loaded preferences:', userPreferences);
   } catch (err) {
     console.error('[Settings] Failed to load preferences:', err);
     userPreferences = { ...DEFAULT_PREFERENCES };
@@ -766,7 +767,7 @@ async function loadPreferences(): Promise<void> {
 async function savePreferences(): Promise<void> {
   try {
     await StorageUtils.set(USER_PREFERENCES_KEY, userPreferences);
-    console.log('[Settings] Saved preferences:', userPreferences);
+    logger.info('[Settings] Saved preferences:', userPreferences);
   } catch (err) {
     console.error('[Settings] Failed to save preferences:', err);
     showToast('Failed to save preferences', 3000, 'error');
