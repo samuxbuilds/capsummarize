@@ -2,6 +2,8 @@
 
 CapSummarize is a free, open-source browser extension that extracts video captions and helps you generate AI summaries using your favorite AI providers (ChatGPT, Claude, Gemini, and more).
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Available-blue?logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/lbhdfoediecbmfenldcegamiideipkig?utm_source=item-share-cb)
+
 ## ✨ Features
 
 - **Extract captions** from YouTube, Google Drive, Udemy, Zoom, and more
@@ -154,9 +156,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with TypeScript, Tailwind CSS, and Bun
-- Uses [marked](https://github.com/markedjs/marked) for Markdown parsing
 - Icons from various AI providers
+
+
+## 🌐 Connect
+
+- [Follow on X (Twitter)](https://x.com/samuxbuilds)
 
 ---
 
-Made with ❤️ by the CapSummarize community
+Made with ❤️ by [SamuxBuilds](https://x.com/samuxbuilds) and the CapSummarize community

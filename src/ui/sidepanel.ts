@@ -1,4 +1,4 @@
-import { marked } from 'marked';
+
 import { animateProgress, hide, show, showToast } from './ui-utils.js';
 import { logger } from '../utils/logger.js';
 import StorageUtils from '../utils/storage.js';
@@ -45,25 +45,20 @@ interface Elements {
   clearHistoryBtn: HTMLButtonElement | null;
   readyState: HTMLElement | null;
   loadingState: HTMLElement | null;
-  summaryState: HTMLElement | null;
   errorState: HTMLElement | null;
   noSubtitlesState: HTMLElement | null;
   progressBar: HTMLElement | null;
   progressText: HTMLElement | null;
-  summaryContent: HTMLElement | null;
-  variantBadge: HTMLElement | null;
   variantSelect: HTMLSelectElement | null;
   variantTrigger: HTMLButtonElement | null;
   variantTriggerText: HTMLElement | null;
   variantDropdown: HTMLElement | null;
   variantChevron: SVGElement | null;
-  readTime: HTMLElement | null;
   errorMessage: HTMLElement | null;
   settingsBtn: HTMLButtonElement | null;
   closeBtn: HTMLButtonElement | null;
   retryBtn: HTMLButtonElement | null;
   providerButtonsContainer: HTMLElement | null;
-  summaryProviderButtonsContainer: HTMLElement | null;
 }
 
 /**
@@ -91,25 +86,20 @@ function cacheElements(): void {
     clearHistoryBtn: get('clearHistoryBtn') as HTMLButtonElement | null,
     readyState: get('readyState'),
     loadingState: get('loadingState'),
-    summaryState: get('summaryState'),
     errorState: get('errorState'),
     noSubtitlesState: get('noSubtitlesState'),
     progressBar: get('progressBar'),
     progressText: get('progressText'),
-    summaryContent: get('summaryContent'),
-    variantBadge: get('variant'),
     variantSelect: get('variantSelect') as HTMLSelectElement | null,
     variantTrigger: get('variantTrigger') as HTMLButtonElement | null,
     variantTriggerText: get('variantTriggerText'),
     variantDropdown: get('variantDropdown'),
     variantChevron: get('variantChevron') as SVGElement | null,
-    readTime: get('readTime'),
     errorMessage: get('errorMessage'),
     settingsBtn: get('settingsBtn') as HTMLButtonElement | null,
     closeBtn: get('closeBtn') as HTMLButtonElement | null,
     retryBtn: get('retryBtn') as HTMLButtonElement | null,
     providerButtonsContainer: get('providerButtonsContainer'),
-    summaryProviderButtonsContainer: get('summaryProviderButtonsContainer'),
   };
 }
 
@@ -118,7 +108,6 @@ function cacheElements(): void {
  */
 async function showReady(): Promise<void> {
   hide(elements.loadingState);
-  hide(elements.summaryState);
   hide(elements.errorState);
   hide(elements.noSubtitlesState);
   show(elements.readyState);
@@ -130,7 +119,6 @@ async function showReady(): Promise<void> {
 function showNoSubtitles(): void {
   hide(elements.readyState);
   hide(elements.loadingState);
-  hide(elements.summaryState);
   hide(elements.errorState);
   show(elements.noSubtitlesState);
 }
@@ -140,7 +128,6 @@ function showNoSubtitles(): void {
  */
 function showLoading(): void {
   hide(elements.readyState);
-  hide(elements.summaryState);
   hide(elements.errorState);
   hide(elements.noSubtitlesState);
   show(elements.loadingState);
@@ -165,38 +152,7 @@ function showLoading(): void {
 /**
  * Show summary state with content
  */
-function showSummary(summary: string, variant: string, readTime?: string): void {
-  hide(elements.readyState);
-  hide(elements.loadingState);
-  hide(elements.errorState);
-  hide(elements.noSubtitlesState);
 
-  state.currentSummary = summary;
-
-  // Parse markdown and update content
-  const parsedMarkdown = marked.parse(summary) as string;
-  if (elements.summaryContent) {
-    elements.summaryContent.innerHTML = parsedMarkdown;
-  }
-  if (elements.variantBadge) {
-    elements.variantBadge.textContent = variant;
-  }
-
-  if (readTime) {
-    if (elements.readTime) {
-      elements.readTime.textContent = readTime;
-    }
-  } else {
-    // Calculate read time based on word count (assuming 200 words per minute)
-    const wordCount = summary.split(/\s+/).length;
-    const minutes = Math.ceil(wordCount / 200);
-    if (elements.readTime) {
-      elements.readTime.textContent = `${minutes} min read`;
-    }
-  }
-
-  show(elements.summaryState);
-}
 
 /**
  * Show error state with message
@@ -204,7 +160,6 @@ function showSummary(summary: string, variant: string, readTime?: string): void 
 function showError(message: string): void {
   hide(elements.readyState);
   hide(elements.loadingState);
-  hide(elements.summaryState);
   hide(elements.noSubtitlesState);
 
   if (elements.errorMessage) {
@@ -644,12 +599,10 @@ async function updateSidepanelState(): Promise<void> {
     // Cache DOM queries - check visibility state once
     const noSubtitlesVisible = !elements.noSubtitlesState?.classList.contains('hidden');
     const readyStateVisible = !elements.readyState?.classList.contains('hidden');
-    const summaryStateVisible = !elements.summaryState?.classList.contains('hidden');
     const errorStateVisible = !elements.errorState?.classList.contains('hidden');
 
-    // Only update if currently showing no subtitles state or ready state
     // Don't interrupt if showing a summary or error state
-    if ((noSubtitlesVisible || readyStateVisible) && !summaryStateVisible && !errorStateVisible) {
+    if ((noSubtitlesVisible || readyStateVisible) && !errorStateVisible) {
       if (noSubtitlesVisible && hasVTT) {
         // VTT was found! Update to ready state
         logger.info('[Sidepanel] VTT found, updating to ready state');
@@ -693,11 +646,7 @@ function setupMessageListener(): void {
             if (summaryMsg.data.url) state.currentUrl = summaryMsg.data.url;
             if (summaryMsg.data.variant) state.currentVariant = summaryMsg.data.variant;
 
-            showSummary(
-              summaryMsg.data.summary,
-              summaryMsg.data.variant || 'default',
-              summaryMsg.data.readTime
-            );
+
           }
           break;
 
@@ -727,7 +676,7 @@ function setupMessageListener(): void {
  * Generate provider buttons dynamically
  */
 function generateProviderButtons(): void {
-  const containers = [elements.providerButtonsContainer, elements.summaryProviderButtonsContainer];
+  const containers = [elements.providerButtonsContainer];
 
   containers.forEach((container) => {
     if (container) {
@@ -954,7 +903,7 @@ async function initialize(): Promise<void> {
         case 'summary':
           if (data) {
             state.currentVariant = data.variant || 'default';
-            showSummary(data.summary, data.variant || 'default', data.readTime);
+
           }
           break;
         case 'error':
