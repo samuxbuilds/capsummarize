@@ -349,14 +349,15 @@ if (!window.__vttInterceptorLoaded) {
       this: XMLHttpRequest,
       method: string,
       url: string,
-      async?: boolean,
-      user?: string | null,
-      password?: string | null
+      _async?: boolean,
+      _user?: string | null,
+      _password?: string | null
     ) {
       // Store method and URL on the XHR instance for later access
       this.__vttMethod = method;
       this.__vttUrl = url;
-      return originalOpen.apply(this, arguments as any);
+      // eslint-disable-next-line prefer-rest-params
+      return originalOpen.apply(this, arguments as unknown as Parameters<typeof originalOpen>);
     };
 
     /**
@@ -368,8 +369,11 @@ if (!window.__vttInterceptorLoaded) {
         if (header && header.toLowerCase() === SKIP_HEADER) {
           this.__vttSkip = true;
         }
-      } catch {}
-      return originalSetRequestHeader.apply(this, arguments as any);
+      } catch {
+        // Ignore header parsing errors
+      }
+      // eslint-disable-next-line prefer-rest-params
+      return originalSetRequestHeader.apply(this, arguments as unknown as Parameters<typeof originalSetRequestHeader>);
     };
 
     /**
@@ -445,7 +449,8 @@ if (!window.__vttInterceptorLoaded) {
       this.addEventListener('readystatechange', onReady);
 
       // Call original send method to actually make the request
-      return originalSend.apply(this, arguments as any);
+      // eslint-disable-next-line prefer-rest-params
+      return originalSend.apply(this, arguments as unknown as Parameters<typeof originalSend>);
     };
   })();
 

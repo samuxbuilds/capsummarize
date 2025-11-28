@@ -1,7 +1,7 @@
 {
   "name": "capsummarize-extension",
-  "version": "1.0.1",
-  "description": "AI-powered video caption summaries with follow-up Q&A",
+  "version": "1.0.2",
+  "description": "AI-powered video caption summaries",
   "type": "module",
   "scripts": {
     "dev": "bun run build:env && bun run watch",

@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { animateProgress, copyToClipboard, hide, show, showToast } from './ui-utils.js';
+import { animateProgress, hide, show, showToast } from './ui-utils.js';
 import { logger } from '../utils/logger.js';
 import StorageUtils from '../utils/storage.js';
 import { extractTextFromVTT } from '../utils/vtt.js';
@@ -12,19 +12,13 @@ import {
   isProviderURL,
   type Provider,
 } from '../services/providerService.js';
-import { getApiBaseUrl as getEnvApiBaseUrl } from '../config/env.js';
 import { loadCustomVariants, loadUserPreferences } from './settings.js';
-import { getPromptVariants as getPromptVariantsFromAPI } from '../utils/variantsCache.js';
+import { getPromptVariants } from '../utils/variantsCache.js';
 import {
-  hasReachedDailyLimit,
-  getRemainingSummaries,
-  getStoredLicenseValidation,
   incrementUsage,
-  FREE_DAILY_LIMIT,
 } from '../utils/promptsCache.js';
 import { state } from './state/sidePanelState.js';
 import { HistoryList } from './components/HistoryList.js';
-import { TTSController } from './components/TTSController.js';
 
 /**
  * Summary message interface
@@ -63,25 +57,13 @@ interface Elements {
   variantTriggerText: HTMLElement | null;
   variantDropdown: HTMLElement | null;
   variantChevron: SVGElement | null;
-  variantDescription: HTMLElement | null;
   readTime: HTMLElement | null;
   errorMessage: HTMLElement | null;
   settingsBtn: HTMLButtonElement | null;
   closeBtn: HTMLButtonElement | null;
   retryBtn: HTMLButtonElement | null;
-  speakBtn: HTMLButtonElement | null;
-  copyBtn: HTMLButtonElement | null;
-  downloadBtn: HTMLButtonElement | null;
-  questionInput: HTMLInputElement | null;
-  askBtn: HTMLButtonElement | null;
-  qaResponse: HTMLElement | null;
-  qaAnswer: HTMLElement | null;
-  qaSection: HTMLElement | null;
-  clearQaBtn: HTMLButtonElement | null;
-  variantHelp: HTMLElement | null;
   providerButtonsContainer: HTMLElement | null;
   summaryProviderButtonsContainer: HTMLElement | null;
-  footer: HTMLElement | null;
 }
 
 /**
@@ -89,7 +71,6 @@ interface Elements {
  */
 let elements: Elements;
 let historyList: HistoryList;
-let ttsController: TTSController;
 
 /**
  * Cache DOM elements on initialization
@@ -122,25 +103,13 @@ function cacheElements(): void {
     variantTriggerText: get('variantTriggerText'),
     variantDropdown: get('variantDropdown'),
     variantChevron: get('variantChevron') as SVGElement | null,
-    variantDescription: get('variantDescription'),
     readTime: get('readTime'),
     errorMessage: get('errorMessage'),
     settingsBtn: get('settingsBtn') as HTMLButtonElement | null,
     closeBtn: get('closeBtn') as HTMLButtonElement | null,
     retryBtn: get('retryBtn') as HTMLButtonElement | null,
-    speakBtn: get('speakBtn') as HTMLButtonElement | null,
-    copyBtn: get('copyBtn') as HTMLButtonElement | null,
-    downloadBtn: get('downloadBtn') as HTMLButtonElement | null,
-    questionInput: get('questionInput') as HTMLInputElement | null,
-    askBtn: get('askBtn') as HTMLButtonElement | null,
-    qaResponse: get('qaResponse'),
-    qaAnswer: get('qaAnswer'),
-    qaSection: get('qaSection'),
-    clearQaBtn: get('clearQaBtn') as HTMLButtonElement | null,
-    variantHelp: get('variantHelp'),
     providerButtonsContainer: get('providerButtonsContainer'),
     summaryProviderButtonsContainer: get('summaryProviderButtonsContainer'),
-    footer: get('footer'),
   };
 }
 
@@ -152,12 +121,7 @@ async function showReady(): Promise<void> {
   hide(elements.summaryState);
   hide(elements.errorState);
   hide(elements.noSubtitlesState);
-  hide(elements.qaSection);
-  hide(elements.footer); // Hide footer since custom provider was removed
   show(elements.readyState);
-
-  // Update usage display
-  await updateUsageDisplay();
 }
 
 /**
@@ -168,8 +132,6 @@ function showNoSubtitles(): void {
   hide(elements.loadingState);
   hide(elements.summaryState);
   hide(elements.errorState);
-  hide(elements.qaSection);
-  hide(elements.footer);
   show(elements.noSubtitlesState);
 }
 
@@ -181,8 +143,6 @@ function showLoading(): void {
   hide(elements.summaryState);
   hide(elements.errorState);
   hide(elements.noSubtitlesState);
-  hide(elements.qaSection);
-  hide(elements.footer);
   show(elements.loadingState);
 
   // Animate progress bar
@@ -210,13 +170,6 @@ function showSummary(summary: string, variant: string, readTime?: string): void 
   hide(elements.loadingState);
   hide(elements.errorState);
   hide(elements.noSubtitlesState);
-  hide(elements.footer); // Show footer for summary actions (speak, copy, download)
-  show(elements.qaSection);
-
-  // Stop TTS if speaking when loading new summary
-  if (state.isSpeaking) {
-    ttsController.stop();
-  }
 
   state.currentSummary = summary;
 
@@ -246,157 +199,6 @@ function showSummary(summary: string, variant: string, readTime?: string): void 
 }
 
 /**
- * Update usage display in the UI
- */
-async function updateUsageDisplay(): Promise<void> {
-  try {
-    const remaining = await getRemainingSummaries();
-    const licenseValidation = await getStoredLicenseValidation();
-
-    // Find or create usage display element
-    let usageDisplay = document.getElementById('usageDisplay');
-
-    if (!usageDisplay) {
-      usageDisplay = document.createElement('div');
-      usageDisplay.id = 'usageDisplay';
-      usageDisplay.className =
-        'text-xs text-muted-foreground px-3 py-1 bg-muted/50 rounded-md mb-3';
-
-      // Insert after variant description
-      // Insert after variant selector
-      const variantTrigger = document.getElementById('variantTrigger');
-      if (variantTrigger && variantTrigger.parentElement && variantTrigger.parentElement.parentNode) {
-        variantTrigger.parentElement.parentNode.insertBefore(usageDisplay, variantTrigger.parentElement.nextSibling);
-      }
-    }
-
-    if (licenseValidation.valid && licenseValidation.lifetime) {
-      usageDisplay.textContent = 'Pro Lifetime - Unlimited summaries';
-      usageDisplay.className = 'text-xs text-green-600 px-3 py-1 bg-green-50 rounded-md mb-3';
-    } else if (remaining === Infinity) {
-      usageDisplay.textContent = 'Pro - Unlimited summaries';
-      usageDisplay.className = 'text-xs text-green-600 px-3 py-1 bg-green-50 rounded-md mb-3';
-    } else {
-      usageDisplay.textContent = `${remaining} of ${FREE_DAILY_LIMIT} summaries remaining today`;
-      usageDisplay.className =
-        remaining <= 2
-          ? 'text-xs text-orange-600 px-3 py-1 bg-orange-50 rounded-md mb-3'
-          : 'text-xs text-muted-foreground px-3 py-1 bg-muted/50 rounded-md mb-3';
-    }
-  } catch (error) {
-    logger.error('[Sidepanel] Failed to update usage display:', error);
-  }
-}
-
-/**
- * Show upgrade to pro prompt when limit is reached
- */
-function showUpgradePrompt(): void {
-  hide(elements.readyState);
-  hide(elements.loadingState);
-  hide(elements.summaryState);
-  hide(elements.errorState);
-  hide(elements.noSubtitlesState);
-  hide(elements.qaSection);
-
-  // Create upgrade prompt HTML
-  const upgradeHTML = `
-    <div class="upgrade-prompt flex flex-col items-center justify-center p-6 text-center h-full animate-in fade-in zoom-in duration-300 overflow-y-auto">
-      <div class="relative mb-6 group">
-        <div class="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
-        <div class="w-16 h-16 bg-card border border-primary/30 rounded-2xl flex items-center justify-center relative shadow-[0_0_30px_rgba(34,211,238,0.15)] group-hover:shadow-[0_0_40px_rgba(34,211,238,0.25)] transition-all duration-500">
-          <svg class="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-          </svg>
-        </div>
-      </div>
-      
-      <h3 class="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">Daily Limit Reached</h3>
-      <p class="text-sm text-muted-foreground mb-6 max-w-[280px] leading-relaxed">
-        You've hit the free limit of <span class="text-foreground font-medium">${FREE_DAILY_LIMIT} summaries</span> today.
-      </p>
-      
-      <div class="card w-full max-w-sm text-left mb-4 border border-border/50 shadow-lg">
-        <div class="p-5">
-          <h2 class="text-sm font-semibold mb-4">Pro Lifetime Benefits</h2>
-
-          <div class="space-y-3">
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <div>
-                <p class="text-sm font-medium text-foreground">Unlimited Summaries</p>
-                <p class="text-xs text-muted-foreground">Unlimited video summaries with no daily limits</p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <div>
-                <p class="text-sm font-medium text-foreground">All Prompt Variants</p>
-                <p class="text-xs text-muted-foreground">Access to all current and future summary styles</p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <div>
-                <p class="text-sm font-medium text-foreground">Priority Support</p>
-                <p class="text-xs text-muted-foreground">Get priority help and feature requests</p>
-              </div>
-            </div>
-            
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <div>
-                <p class="text-sm font-medium text-foreground">One-Time Purchase</p>
-                <p class="text-xs text-muted-foreground">Lifetime access with no subscription fees</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-5 pt-4 border-t border-border">
-            <a href="https://www.capsummarize.app/" target="_blank" 
-               class="btn-primary w-full justify-center text-sm py-2.5 shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] transition-all duration-300">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-              Get Pro Lifetime License
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <button id="maybeLaterBtn" 
-              class="text-xs text-muted-foreground hover:text-foreground transition-colors py-2 px-4 rounded-lg hover:bg-white/5">
-        Maybe later
-      </button>
-    </div>
-  `;
-
-  // Insert the upgrade prompt into the main content area
-  if (elements.mainContent) {
-    elements.mainContent.innerHTML = upgradeHTML;
-    show(elements.mainContent);
-  }
-
-  // Add event listener for the "Maybe Later" button
-  const maybeLaterBtn = document.getElementById('maybeLaterBtn') as HTMLButtonElement;
-  if (maybeLaterBtn) {
-    maybeLaterBtn.addEventListener('click', () => {
-      showReady();
-    });
-  }
-}
-
-/**
  * Show error state with message
  */
 function showError(message: string): void {
@@ -404,45 +206,11 @@ function showError(message: string): void {
   hide(elements.loadingState);
   hide(elements.summaryState);
   hide(elements.noSubtitlesState);
-  hide(elements.qaSection);
 
   if (elements.errorMessage) {
     elements.errorMessage.textContent = message;
   }
   show(elements.errorState);
-}
-
-/**
- * Copy summary to clipboard
- */
-async function handleCopy(): Promise<void> {
-  if (!state.currentSummary) return;
-
-  const success = await copyToClipboard(state.currentSummary);
-  if (success) {
-    showToast('Summary copied to clipboard', 2000, 'success');
-  } else {
-    showToast('Failed to copy summary', 2000, 'error');
-  }
-}
-
-/**
- * Download summary as markdown file
- */
-function handleDownload(): void {
-  if (!state.currentSummary) return;
-
-  const blob = new Blob([state.currentSummary], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `summary-${state.currentVideoId || Date.now()}.md`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  showToast('Summary downloaded', 2000, 'success');
 }
 
 /**
@@ -514,83 +282,6 @@ async function handleVariantChange(): Promise<void> {
       timestamp: Date.now(),
     });
     logger.info(`[Sidepanel] Stored prompt template for variant: ${selectedVariant}`);
-  }
-
-  // Stop TTS if speaking
-  if (state.isSpeaking) {
-    ttsController.stop();
-  }
-}
-
-/**
- * Handle Q&A question submission
- */
-async function handleAskQuestion(): Promise<void> {
-  if (!elements.questionInput || !elements.askBtn) return;
-
-  const question = elements.questionInput.value.trim();
-
-  if (!question || !state.currentVtt) {
-    showToast('Please enter a question', 2000, 'error');
-    return;
-  }
-
-  try {
-    elements.askBtn.disabled = true;
-    elements.askBtn.textContent = 'Asking...';
-
-    const response = await fetch(`${getEnvApiBaseUrl()}/summarize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vtt: state.currentVtt,
-        url: state.currentUrl,
-        question: question,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.success && data.summary) {
-      // Parse and show answer
-      const parsedAnswer = marked.parse(data.summary) as string;
-      if (elements.qaAnswer) {
-        elements.qaAnswer.innerHTML = parsedAnswer;
-      }
-      if (elements.qaResponse) {
-        show(elements.qaResponse);
-      }
-      showToast('Answer generated', 2000, 'success');
-    } else {
-      showError(data.error || 'Failed to generate answer');
-    }
-  } catch (error) {
-    logger.error('Failed to ask question:', error);
-    showToast('Failed to communicate with API server', 2000, 'error');
-  } finally {
-    if (elements.askBtn) {
-      elements.askBtn.disabled = false;
-      elements.askBtn.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-        </svg>
-      `;
-    }
-  }
-}
-
-/**
- * Clear Q&A response
- */
-function handleClearQa(): void {
-  if (elements.questionInput) {
-    elements.questionInput.value = '';
-  }
-  if (elements.qaAnswer) {
-    elements.qaAnswer.innerHTML = '';
-  }
-  if (elements.qaResponse) {
-    hide(elements.qaResponse);
   }
 }
 
@@ -674,7 +365,7 @@ async function loadPromptVariants(): Promise<void> {
 
     // Get system variants from API with caching
     logger.info('[Sidepanel] Loading prompt variants from API...');
-    const systemVariants = await getPromptVariantsFromAPI();
+    const systemVariants = await getPromptVariants();
 
     const renderOption = (variant: any, isCustom: boolean) => {
       // Populate custom dropdown item
@@ -820,11 +511,6 @@ async function handleRetry(): Promise<void> {
  * Close side panel
  */
 function handleClose(): void {
-  // Stop TTS if speaking
-  if (state.isSpeaking) {
-    ttsController.stop();
-  }
-
   // Notify background that panel is closing
   chrome.runtime.sendMessage({ action: 'sidePanelClosed' }).catch(() => {
     // Background might not be listening, that's okay
@@ -913,15 +599,6 @@ async function ensureProviderPermission(provider: Provider): Promise<boolean> {
  */
 async function handleOpenProvider(provider: Provider): Promise<void> {
   try {
-    // Check if user has reached daily limit
-    const hasReachedLimit = await hasReachedDailyLimit();
-    const licenseValidation = await getStoredLicenseValidation();
-
-    if (hasReachedLimit && !licenseValidation.valid) {
-      showUpgradePrompt();
-      return;
-    }
-
     await refreshUserPreferences();
 
     if (!state.selectedHistoryId) {
@@ -940,12 +617,8 @@ async function handleOpenProvider(provider: Provider): Promise<void> {
     const finalPrompt = `${prompt}\n\n${transcript}`;
     logger.info('[Sidepanel] Composed prompt:', finalPrompt);
 
-    // Increment usage count for non-licensed users
-    if (!licenseValidation.valid) {
-      await incrementUsage();
-      // Update usage display to show new count
-      await updateUsageDisplay();
-    }
+    // Track usage for analytics
+    await incrementUsage();
 
     const hasPermission = await ensureProviderPermission(provider);
     if (!hasPermission) {
@@ -1121,18 +794,6 @@ function setupEventListeners(): void {
   if (elements.retryBtn) {
     elements.retryBtn.addEventListener('click', handleRetry);
   }
-  if (elements.copyBtn) {
-    elements.copyBtn.addEventListener('click', handleCopy);
-  }
-  if (elements.downloadBtn) {
-    elements.downloadBtn.addEventListener('click', handleDownload);
-  }
-  if (elements.askBtn) {
-    elements.askBtn.addEventListener('click', handleAskQuestion);
-  }
-  if (elements.clearQaBtn) {
-    elements.clearQaBtn.addEventListener('click', handleClearQa);
-  }
 
   // Use HistoryList component
   historyList = new HistoryList(
@@ -1143,23 +804,9 @@ function setupEventListeners(): void {
     handleHistoryItemClick
   );
 
-  // Use TTSController component
-  ttsController = new TTSController('speakBtn', (isSpeaking) => {
-    state.isSpeaking = isSpeaking;
-  });
-
   // Hook up clear history button separately since it's outside the list
   if (elements.clearHistoryBtn) {
     elements.clearHistoryBtn.addEventListener('click', clearAllHistory);
-  }
-
-  // Handle Enter key in question input
-  if (elements.questionInput) {
-    elements.questionInput.addEventListener('keypress', (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleAskQuestion();
-      }
-    });
   }
 
   // Generate provider buttons dynamically
@@ -1281,7 +928,6 @@ async function initialize(): Promise<void> {
     // We don't await these immediately to allow UI to render
     const backgroundTasks = Promise.all([
       loadPromptVariants().catch(err => logger.error('Failed to load variants:', err)),
-      updateUsageDisplay().catch(err => logger.error('Failed to update usage:', err)),
       loadHistory().catch(err => logger.error('Failed to load history:', err))
     ]);
 

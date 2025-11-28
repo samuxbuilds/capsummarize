@@ -9,9 +9,9 @@ export function extractTextFromVTT(vttContent: string, removeTimestamps: boolean
   const lines = vttContent.split('\n');
 
   let buffer: string[] = [];
-  let result: string[] = [];
+  const result: string[] = [];
 
-  for (let line of lines) {
+  for (const line of lines) {
     const trimmed = line.trim();
 
     // Skip metadata and styles
@@ -72,10 +72,10 @@ export function isThumbnailVTT(content: string): boolean {
   if (!content || content.length === 0) return false;
 
   try {
-    const lines = content.split('\n');
+    const lines = content.split('\\n');
     let xywh_count = 0;
     let actual_text_count = 0;
-    let arrow_count = 0; // Count timestamp arrows (-->)
+    let _arrow_count = 0; // Count timestamp arrows (-->) - tracked for potential future use
 
     // Sample first 100 lines for performance (sufficient for detection)
     for (let i = 0; i < Math.min(lines.length, 100); i++) {
@@ -88,7 +88,7 @@ export function isThumbnailVTT(content: string): boolean {
 
       // Count timestamp arrows
       if (/-->/.test(line)) {
-        arrow_count++;
+        _arrow_count++;
       }
 
       // Identify actual subtitle text by excluding non-text lines

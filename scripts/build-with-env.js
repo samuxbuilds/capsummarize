@@ -38,9 +38,7 @@ function loadEnv() {
   // Override with process.env if available
   return {
     ...env,
-    API_BASE_URL:
-      process.env.API_BASE_URL || env.API_BASE_URL || 'https://api.capsummarize.app',
-    NODE_ENV: process.env.NODE_ENV || env.NODE_ENV || 'development',
+    NODE_ENV: process.env.NODE_ENV || env.NODE_ENV || 'production',
   };
 }
 
@@ -50,7 +48,6 @@ function processFile(filePath, env) {
     let content = readFileSync(filePath, 'utf8');
     
     // Replace environment variable placeholders
-    content = content.replace(/__API_BASE_URL__/g, `"${env.API_BASE_URL}"`);
     content = content.replace(/__NODE_ENV__/g, `"${env.NODE_ENV}"`);
     
     writeFileSync(filePath, content);

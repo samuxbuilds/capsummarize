@@ -8,13 +8,7 @@
 import StorageUtils from '../utils/storage.js';
 import { showToast } from './ui-utils.js';
 import { logger } from '../utils/logger.js';
-import { getPromptVariants as getPromptVariantsFromAPI } from '../utils/variantsCache.js';
-import {
-  getStoredLicenseValidation,
-  validateAndStoreLicenseKey,
-  getStoredLicenseKey,
-  clearLicenseKey,
-} from '../utils/promptsCache.js';
+import { getPromptVariants } from '../utils/variantsCache.js';
 import { SettingsForm, type SettingsFormElements } from './components/SettingsForm.js';
 
 /**
@@ -85,7 +79,6 @@ interface SettingsElements {
   tabButtons: NodeListOf<HTMLButtonElement>;
   variantsTab: HTMLElement;
   preferencesTab: HTMLElement;
-  licenseTab: HTMLElement;
 
   // List
   customVariantsList: HTMLElement;
@@ -99,15 +92,6 @@ interface SettingsElements {
   defaultVariantDropdown: HTMLElement;
   includeTimestampsToggle: HTMLInputElement;
 
-  // License
-  licenseStatus: HTMLElement;
-  licenseForm: HTMLFormElement;
-  licenseKeyInput: HTMLInputElement;
-  licenseEmailInput: HTMLInputElement;
-  validateLicenseBtn: HTMLButtonElement;
-  clearLicenseBtn: HTMLButtonElement;
-  activateLicenseCard: HTMLElement;
-  proBenefitsCard: HTMLElement;
 }
 
 let elements: SettingsElements;
@@ -128,7 +112,6 @@ async function init(): Promise<void> {
     tabButtons: document.querySelectorAll('.settings-tab'),
     variantsTab: document.getElementById('variantsTab') as HTMLElement,
     preferencesTab: document.getElementById('preferencesTab') as HTMLElement,
-    licenseTab: document.getElementById('licenseTab') as HTMLElement,
     customVariantsList: document.getElementById('customVariantsList') as HTMLElement,
     emptyState: document.getElementById('emptyState') as HTMLElement,
     defaultVariantSelect: document.getElementById('defaultVariantSelect') as HTMLSelectElement,
@@ -137,14 +120,6 @@ async function init(): Promise<void> {
     defaultVariantChevron: document.getElementById('defaultVariantChevron') as HTMLElement,
     defaultVariantDropdown: document.getElementById('defaultVariantDropdown') as HTMLElement,
     includeTimestampsToggle: document.getElementById('includeTimestampsToggle') as HTMLInputElement,
-    licenseStatus: document.getElementById('licenseStatus') as HTMLElement,
-    licenseForm: document.getElementById('licenseForm') as HTMLFormElement,
-    licenseKeyInput: document.getElementById('licenseKeyInput') as HTMLInputElement,
-    licenseEmailInput: document.getElementById('licenseEmailInput') as HTMLInputElement,
-    validateLicenseBtn: document.getElementById('validateLicenseBtn') as HTMLButtonElement,
-    clearLicenseBtn: document.getElementById('clearLicenseBtn') as HTMLButtonElement,
-    activateLicenseCard: document.getElementById('activateLicenseCard') as HTMLElement,
-    proBenefitsCard: document.getElementById('proBenefitsCard') as HTMLElement,
   };
 
   // Initialize SettingsForm
@@ -177,9 +152,6 @@ async function init(): Promise<void> {
 
   // Load custom variants
   await loadAndRenderVariants();
-
-  // Initialize license status
-  await updateLicenseStatus();
 
   logger.info('[Settings] Initialization complete');
 }
@@ -238,13 +210,6 @@ function setupEventListeners(): void {
     }
   });
 
-  // License
-  if (elements.licenseForm) {
-    elements.licenseForm.addEventListener('submit', handleLicenseSubmit);
-  }
-  if (elements.clearLicenseBtn) {
-    elements.clearLicenseBtn.addEventListener('click', handleClearLicense);
-  }
 }
 
 /**
@@ -266,10 +231,6 @@ function handleTabSwitch(tabName: string): void {
   if (elements.preferencesTab) {
     elements.preferencesTab.classList.toggle('active', tabName === 'preferences');
     elements.preferencesTab.classList.toggle('hidden', tabName !== 'preferences');
-  }
-  if (elements.licenseTab) {
-    elements.licenseTab.classList.toggle('active', tabName === 'license');
-    elements.licenseTab.classList.toggle('hidden', tabName !== 'license');
   }
 }
 
@@ -409,7 +370,7 @@ function renderVariantsList(): void {
 
   // Check if required elements exist
   if (!listContainer || !emptyState) {
-    console.error('[Settings] Required elements not found for renderVariantsList');
+    // Elements may not exist if custom variants tab hasn't been rendered yet
     return;
   }
 
@@ -651,7 +612,7 @@ async function populateVariantDropdown(): Promise<void> {
   const select = elements.defaultVariantSelect;
 
   if (!dropdown || !select) {
-    console.error('[Settings] Dropdown elements not found');
+    // Elements may not exist if preferences tab hasn't been rendered yet
     return;
   }
 
@@ -660,7 +621,7 @@ async function populateVariantDropdown(): Promise<void> {
 
   try {
     // Get variants from API with caching
-    const variants = await getPromptVariantsFromAPI();
+    const variants = await getPromptVariants();
     const customVariants = await loadCustomVariants();
 
     const renderOption = (variant: any, isCustom: boolean) => {
@@ -787,197 +748,6 @@ async function handlePreferenceChange(): Promise<void> {
 
   // Show confirmation
   showToast('Preferences saved', 1500, 'success');
-}
-
-/**
- * Update license status display
- */
-async function updateLicenseStatus(): Promise<void> {
-  // Check if license status element exists
-  if (!elements.licenseStatus) {
-    console.error('[Settings] licenseStatus element not found');
-    return;
-  }
-
-  try {
-    const validation = await getStoredLicenseValidation();
-    const storedKey = await getStoredLicenseKey();
-
-    if (!storedKey) {
-      elements.licenseStatus.innerHTML = `
-        <div class="text-center p-6 border border-border rounded-lg">
-          <svg class="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-          </svg>
-          <p class="text-sm font-medium text-foreground mb-2">No License Activated</p>
-          <p class="text-xs text-muted-foreground">Enter your license key below to unlock Pro features</p>
-        </div>
-      `;
-      // Show activation cards when no license
-      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
-      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
-      return;
-    }
-
-    if (validation.valid && validation.lifetime) {
-      elements.licenseStatus.innerHTML = `
-        <div class="text-center p-6 border border-green-200 bg-green-50 rounded-lg">
-          <svg class="w-12 h-12 mx-auto mb-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <p class="text-sm font-medium text-green-800 mb-2">🔓 Pro Lifetime Active</p>
-          <p class="text-xs text-green-600">Unlimited summaries and all Pro features</p>
-          <div class="mt-3">
-            <code class="text-xs bg-green-100 px-2 py-1 rounded text-green-800">${storedKey.substring(0, 8)}...</code>
-          </div>
-        </div>
-      `;
-      // Hide activation cards when license is valid
-      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.add('hidden');
-      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.add('hidden');
-    } else if (validation.valid) {
-      elements.licenseStatus.innerHTML = `
-        <div class="text-center p-6 border border-blue-200 bg-blue-50 rounded-lg">
-          <svg class="w-12 h-12 mx-auto mb-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <p class="text-sm font-medium text-blue-800 mb-2">✅ License Active</p>
-          <p class="text-xs text-blue-600">Valid until: ${validation.expiresAt ? new Date(validation.expiresAt).toLocaleDateString() : 'Unknown'}</p>
-          <div class="mt-3">
-            <code class="text-xs bg-blue-100 px-2 py-1 rounded text-blue-800">${storedKey.substring(0, 8)}...</code>
-          </div>
-        </div>
-      `;
-      // Hide activation cards when license is valid
-      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.add('hidden');
-      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.add('hidden');
-    } else {
-      elements.licenseStatus.innerHTML = `
-        <div class="text-center p-6 border border-red-200 bg-red-50 rounded-lg">
-          <svg class="w-12 h-12 mx-auto mb-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <p class="text-sm font-medium text-red-800 mb-2">❌ License Invalid</p>
-          <p class="text-xs text-red-600">${validation.error || 'Please check your license key and try again'}</p>
-          <div class="mt-3">
-            <code class="text-xs bg-red-100 px-2 py-1 rounded text-red-800">${storedKey.substring(0, 8)}...</code>
-          </div>
-        </div>
-      `;
-      // Show activation cards when license is invalid
-      if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
-      if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
-    }
-  } catch (error) {
-    console.error('[Settings] Failed to update license status:', error);
-    elements.licenseStatus.innerHTML = `
-      <div class="text-center p-6 border border-orange-200 bg-orange-50 rounded-lg">
-        <svg class="w-12 h-12 mx-auto mb-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-sm font-medium text-orange-800 mb-2">⚠️ Error Loading License</p>
-        <p class="text-xs text-orange-600">Please refresh the page and try again</p>
-      </div>
-    `;
-    // Show activation cards on error, just in case
-    if (elements.activateLicenseCard) elements.activateLicenseCard.classList.remove('hidden');
-    if (elements.proBenefitsCard) elements.proBenefitsCard.classList.remove('hidden');
-  }
-}
-
-/**
- * Handle license form submission
- */
-async function handleLicenseSubmit(event: Event): Promise<void> {
-  event.preventDefault();
-
-  const licenseKey = elements.licenseKeyInput.value.trim();
-  const email = elements.licenseEmailInput.value.trim();
-
-  if (!licenseKey) {
-    showToast('Please enter a license key', 3000, 'error');
-    return;
-  }
-
-  // Show loading state
-  elements.validateLicenseBtn.disabled = true;
-  elements.validateLicenseBtn.innerHTML = `
-    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    Validating...
-  `;
-
-  try {
-    const validation = await validateAndStoreLicenseKey(licenseKey, email);
-
-    if (validation.valid) {
-      showToast(
-        validation.lifetime
-          ? '🔓 Pro Lifetime license activated successfully!'
-          : '✅ License validated successfully!',
-        3000,
-        'success'
-      );
-
-      // Clear form
-      elements.licenseKeyInput.value = '';
-      elements.licenseEmailInput.value = '';
-
-      // Update status display
-      await updateLicenseStatus();
-    } else {
-      showToast(
-        `❌ License validation failed: ${validation.error || 'Unknown error'}`,
-        3000,
-        'error'
-      );
-
-      // Update status display to show error
-      await updateLicenseStatus();
-    }
-  } catch (error) {
-    console.error('[Settings] License validation error:', error);
-    showToast('Failed to validate license. Please try again.', 3000, 'error');
-  } finally {
-    // Restore button state
-    elements.validateLicenseBtn.disabled = false;
-    elements.validateLicenseBtn.innerHTML = `
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      Validate License
-    `;
-  }
-}
-
-/**
- * Handle clear license button click
- */
-async function handleClearLicense(): Promise<void> {
-  if (
-    !confirm(
-      'Are you sure you want to clear your license? You will need to re-enter it to continue using Pro features.'
-    )
-  ) {
-    return;
-  }
-
-  try {
-    await clearLicenseKey();
-    showToast('License cleared successfully', 3000, 'success');
-
-    // Clear form
-    elements.licenseKeyInput.value = '';
-    elements.licenseEmailInput.value = '';
-
-    // Update status display
-    await updateLicenseStatus();
-  } catch (error) {
-    console.error('[Settings] Failed to clear license:', error);
-    showToast('Failed to clear license. Please try again.', 3000, 'error');
-  }
 }
 
 // Initialize when DOM is ready

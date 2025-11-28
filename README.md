@@ -1,175 +1,162 @@
 # CapSummarize — AI-powered Video Caption Summaries
 
-CapSummarize is a browser extension that extracts video captions (VTT), generates AI summaries, and enables follow-up Q&A via an interactive side panel and floating UI.
+CapSummarize is a free, open-source browser extension that extracts video captions and helps you generate AI summaries using your favorite AI providers (ChatGPT, Claude, Gemini, and more).
 
----
+## ✨ Features
 
-## ✅ Overview
+- **Extract captions** from YouTube, Google Drive, Udemy, Zoom, and more
+- **Multiple summary styles** - Choose from 15 different formats (Default, Educational, Technical, Podcast, Kids-friendly, etc.)
+- **Use any AI provider** - ChatGPT, Claude, Gemini, Grok, Perplexity, Mistral, Meta AI, and more
+- **Custom variants** - Create your own summary templates
+- **History tracking** - Access previously captured transcripts
+- **Privacy-focused** - All processing happens locally, no data sent to external servers
+- **100% Free** - No subscriptions, no limits
 
-CapSummarize (package name: `capsummarize-extension`) is a Manifest V3 browser extension that provides lightweight, privacy-conscious AI summaries for videos by processing or caching captions (VTT) and surfacing summarizations in a side panel with optional follow-up questions.
+## 🚀 Quick Start
 
-Key features:
-- Capture and cache VTT captions for videos
-- Generate short summaries and Q&A via LLM providers
-- Toggleable side panel UI and floating 'Summarize' icon
-- Works on sites like YouTube, Google Drive, Udemy, Zoom, and many others (see `src/manifest.ts` host rules)
-- Build-time environment replacement to safely provide `API_BASE_URL` and runtime detection
+### Install from Source
 
----
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/samuxbuilds/capsummarize.git
+   cd capsummarize/capsummarize-frontend
+   ```
 
-## 🔧 Prerequisites
+2. **Install dependencies** (using [Bun](https://bun.sh) recommended)
+   ```bash
+   bun install
+   # or
+   npm install
+   ```
 
-- Node.js (v18+) or Bun installed (recommended for this project — see https://bun.sh)
-- A Chromium-compatible browser (Chrome, Edge) that supports Manifest V3 and side panels
-- Optional: An `.env` that points `API_BASE_URL` to your backend
+3. **Build the extension**
+   ```bash
+   bun run build
+   # or
+   npm run build
+   ```
 
----
+4. **Load in Chrome**
+   - Open `chrome://extensions/`
+   - Enable **Developer mode** (top-right)
+   - Click **Load unpacked** and select the `dist/` folder
 
-## ⚙️ Installation
+## 🔧 Development
 
-Clone the repository and install dependencies. The repo uses Bun by default for fast installs and builds, but you can use `npm` as a fallback.
-
-With Bun (recommended):
-
-```bash
-git clone <repo-url>
-cd capsummarize
-bun install
-```
-
-Or with npm / node:
-
-```bash
-git clone <repo-url>
-cd capsummarize
-npm ci
-```
-
----
-
-## ⚙️ Configuration
-
-1. Copy `.env.example` to `.env` if you need a local override.
-
-```bash
-cp .env.example .env
-```
-
-2. Edit `.env` if you want to run against a local backend (e.g., `API_BASE_URL=http://localhost:8000`). The build step (`scripts/build-with-env.js`) will replace placeholders in the source with the configured values.
-
-Note: If no `.env` is provided, the project defaults to a production base URL (see `src/config/env.ts` -> `https://api.capsummarize.app`).
-
----
-
-## 🧪 Development
-
-Start the developer watch mode, which compiles files and watches for changes:
+Start the development server with hot reload:
 
 ```bash
 bun run dev
-# or if you prefer npm, which calls bun internally
+# or
 npm run dev
 ```
 
-This will:
-- Replace environment placeholders (`scripts/build-with-env.js`)
-- Build the extension assets and watch for changes (TypeScript, UI, and CSS build)
+This watches for file changes and rebuilds automatically.
 
----
+### Available Scripts
 
-## 📦 Build
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development mode with watch |
+| `npm run build` | Build for production |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run type-check` | Run TypeScript type checking |
+| `npm run clean` | Remove build artifacts |
 
-Build a production-ready distribution into `dist/`:
+## 📁 Project Structure
 
-```bash
-bun run build
-# or
-npm run build
+```
+src/
+├── background/          # Service worker modules
+│   ├── messageHandlers.ts
+│   ├── sidePanelManager.ts
+│   ├── storageHelpers.ts
+│   └── vttCacheManager.ts
+├── config/              # Configuration
+│   ├── prompts.ts       # Summary prompt templates
+│   └── providers.ts     # AI provider definitions
+├── services/            # Business logic
+│   └── providerService.ts
+├── types/               # TypeScript type definitions
+├── ui/                  # User interface
+│   ├── components/      # Reusable UI components
+│   ├── state/           # State management
+│   ├── sidepanel.ts     # Main side panel
+│   └── settings.ts      # Settings page
+├── utils/               # Utility functions
+│   ├── storage.ts       # IndexedDB wrapper
+│   ├── vtt.ts           # VTT parsing
+│   └── ...
+├── background.ts        # Service worker entry
+├── content.ts           # Content script
+├── interceptor.ts       # Caption interception
+└── manifest.ts          # Extension manifest generator
 ```
 
-The `dist/` folder will contain `manifest.json` and the compiled `background.js`, `content.js`, `ui`, `icons`, and `utils` files. This folder can be loaded as an **unpacked Chrome extension**.
+## 🎨 Summary Styles
 
-### Load the extension (Chrome / Chromium)
+CapSummarize includes 15 built-in summary styles:
 
-1. Open `chrome://extensions/`.
-2. Toggle on **Developer mode** (top-right).
-3. Click **Load unpacked** and select the `dist/` folder.
+- **Default** - Balanced, comprehensive summary
+- **Educational** - Academic-focused with key concepts
+- **Technical** - Code-focused with implementation details
+- **Casual** - Friendly, conversational tone
+- **Executive** - Business-focused brief
+- **Marketing** - Engaging promotional style
+- **News** - Journalistic article format
+- **Podcast** - Audio-friendly notes
+- **Kids** - Simple language for young audiences
+- **Blog** - SEO-optimized blog post
+- **YouTube** - Video description format
+- **Cheatsheet** - Quick reference card
+- **Recap** - Brief highlights
+- **Interview** - Q&A format
+- **X/Twitter** - Thread-ready format
 
----
+You can also create custom variants in Settings.
 
-## ✅ Linting, Type-Checking, and Formatting
+## 🔒 Privacy & Security
 
-- Type check: `npm run type-check` (runs `tsc --noEmit`)
-- Lint with `npm run lint` (ESLint)
-- Format with `npm run format` (Prettier)
+- **No external servers** - Everything runs locally in your browser
+- **No data collection** - Your video content never leaves your device
+- **No accounts required** - Use immediately without signup
+- **Open source** - Audit the code yourself
 
----
+See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) and [SECURITY_PRACTICES.md](SECURITY_PRACTICES.md) for details.
 
-## 🧩 Project Structure (Highlights)
+## 🌐 Supported Sites
 
-- `src/` — TypeScript source for extension (background, content, UI, utils)
-  - `src/background.ts` — Main service-worker (background script)
-  - `src/content.ts` — Content script injected into pages
-  - `src/ui/sidepanel.ts` & `src/ui/settings.ts` — UI components for the side panel and settings
-  - `src/interceptor.ts` — Interceptor logic for capturing captions
-  - `src/config` — Environment helper and configs
-  - `src/styles` — Tailwind/ CSS styles
-- `icons/` — Extension icons
-- `dist/` — Build output (generated)
-- `scripts/build-with-env.js` — Environment placeholder replacer during build
-- `package.json` — Scripts & dependencies
+- YouTube
+- Google Drive
+- Google Sites
+- Udemy
+- Zoom
+- X (Twitter)
+- And more via caption interception
 
----
+## 🤝 Contributing
 
-## 🔁 Supported Hosts & Providers
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-The extension's `manifest.ts` includes `host_permissions` for content scripts and `optional_host_permissions` for LLM providers. The default supported hosts include `youtube.com`, `drive.google.com`, and others; providers for summarization are included as optional permissions.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run lint and type checks (`npm run lint && npm run type-check`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
----
+## 📄 License
 
-## 🛡️ Security & Privacy
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- CapSummarize uses build-time replacement for API URLs (`scripts/build-with-env.js`) to avoid leaking secrets in the frontend (browser extension) source.
-- See `PRIVACY_POLICY.md`, `TERMS_OF_SERVICE.md`, and `SECURITY_PRACTICES.md` for more details.
+## 🙏 Acknowledgments
 
----
-
-## 🧑‍💻 Contributing
-
-We welcome contributions! To contribute:
-
-1. Fork the repo and create a feature branch.
-2. Run lint / type-check / format locally.
-3. Open a pull request with a clear description.
-
-Please run the following locally before submitting a PR:
-
-```bash
-npm run lint
-npm run format
-npm run type-check
-```
-
-If you add tests, include them and run them in your PR.
+- Built with TypeScript, Tailwind CSS, and Bun
+- Uses [marked](https://github.com/markedjs/marked) for Markdown parsing
+- Icons from various AI providers
 
 ---
 
-## ❗ Known Differences
-
-- `.env.example` references `recapit.ai` in a comment — the main configuration and defaults use `capsummarize.app`. If you are reusing `.env.example`, update `API_BASE_URL` accordingly.
-
----
-
-## 📫 Contact / Author
-
-If you need help or want to report an issue, please create an issue in this repository.
-
----
-
-## 📝 License
-
-This repository does not contain a `LICENSE` file. If you plan to reuse or distribute the code, add a `LICENSE` appropriate for your intent (e.g., MIT, Apache 2.0) or check with the repository owner.
-
----
-
-Thanks for checking out CapSummarize! 🚀
+Made with ❤️ by the CapSummarize community

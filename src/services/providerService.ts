@@ -234,7 +234,7 @@ async function injectPrompt(tabId: number, provider: Provider, prompt: string): 
             const maxSubmitRetries = 10;
             const submitInterval = 600;
 
-            function attemptSubmit() {
+            const attemptSubmit = (): void => {
               const submitBtn = document.querySelector(submitSelector) as
                 | HTMLElement
                 | SVGElement

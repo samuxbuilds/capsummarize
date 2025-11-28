@@ -4,13 +4,22 @@
     "es2022": true,
     "webextensions": true
   },
-  "extends": "eslint:recommended",
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
   "parserOptions": {
     "ecmaVersion": 2022,
-    "sourceType": "module"
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
+  "plugins": ["@typescript-eslint"],
   "rules": {
     "no-unused-vars": "off",
-    "no-console": "off"
-  }
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "@typescript-eslint/no-explicit-any": "warn"
+  },
+  "ignorePatterns": ["dist/", "node_modules/", "*.js"]
 }

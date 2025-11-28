@@ -132,16 +132,18 @@ export async function handleGetVTTContent(
 
     const vttData = tabId ? await vttCacheManager.getVTT(tabId, tabUrl) : undefined;
     let content = vttData?.content;
-    let url = tabUrl;
+    const url = tabUrl;
 
     if (!content && tabUrl) {
       try {
         const storageKey = getVttStorageKey(tabUrl);
-        const cachedVtt = await StorageUtils.get<any>(storageKey);
+        const cachedVtt = await StorageUtils.get<{ content?: string }>(storageKey);
         if (cachedVtt?.content) {
           content = cachedVtt.content;
         }
-      } catch {}
+      } catch {
+        // Ignore storage errors, will return 'No VTT found'
+      }
     }
 
     if (!content) {

@@ -33,36 +33,6 @@ export function sanitizeInput(input: string): string {
 }
 
 /**
- * Validates that a URL is safe for external requests
- * Allows HTTPS URLs for production and HTTP localhost for development
- *
- * @param url - URL to validate
- * @returns True if URL is safe for API requests
- */
-export function isValidApiUrl(url: string): boolean {
-  if (typeof url !== 'string') return false;
-
-  try {
-    const parsed = new URL(url);
-
-    // Allow localhost/127.0.0.1 for development (HTTP or HTTPS)
-    const isLocalhost =
-      parsed.hostname === 'localhost' ||
-      parsed.hostname === '127.0.0.1' ||
-      parsed.hostname === '[::1]';
-
-    if (isLocalhost) {
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    }
-
-    // For production, require HTTPS and capsummarize.app domain
-    return parsed.protocol === 'https:' && parsed.hostname.includes('capsummarize.app');
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Sanitizes VTT content to prevent injection through subtitle files
  * Removes any potential script content from VTT subtitle data
  *

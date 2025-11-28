@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; connect-src https://api.capsummarize.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: chrome-extension:; font-src 'self' data: https://fonts.gstatic.com;"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: chrome-extension:; font-src 'self' data: https://fonts.gstatic.com;"
     />
     <title>CapSummarize - AI Video Summaries</title>
     <!-- Load Inter Font -->
@@ -97,14 +97,14 @@
             <div class="space-y-5 p-6 m-0 overflow-visible">
               <!-- Summary Style Selector -->
               <div class="space-y-3 pb-4 border-b border-border relative z-50">
-                <label for="variantTrigger" class="text-sm font-semibold text-foreground block"
+                <label for="variantTrigger" class="text-sm font-semibold text-foreground block fade-in delay-100"
                   >Choose summary style</label
                 >
                 <div class="relative z-50">
                   <button
                     type="button"
                     id="variantTrigger"
-                    class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors"
+                    class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors fade-in delay-200"
                     aria-haspopup="listbox"
                     aria-expanded="false"
                   >
@@ -142,15 +142,8 @@
               </div>
 
               <div class="space-y-5 overflow-visible">
-                <div
-                  id="variantHelp"
-                  class="text-xs text-muted-foreground leading-relaxed hidden"
-                  role="region"
-                  aria-live="polite"
-                ></div>
-
                 <div class="space-y-3 pt-3 overflow-visible">
-                  <div class="text-sm font-medium text-foreground text-center">Select provider</div>
+                  <div class="text-sm font-medium text-foreground text-center fade-in delay-300">Select provider</div>
                   <div
                     id="providerButtonsContainer"
                     class="flex flex-wrap gap-2 justify-center overflow-visible"
@@ -407,145 +400,36 @@
         </div>
       </main>
 
-      <!-- Q&A Section - Sticky at bottom (only show when there's a summary) -->
-      <div
-        id="qaSection"
-        class="bg-card border-t border-border px-6 py-4 flex-shrink-0 hidden shadow-[0_-8px_32px_rgba(124,92,255,0.15)]"
-      >
-        <div id="qaForm" class="space-y-3">
-          <div class="flex items-start space-x-3">
-            <div class="flex-1 relative">
-              <input
-                type="text"
-                id="questionInput"
-                placeholder="💬 Ask a follow-up question about this video..."
-                class="w-full px-4 py-3 text-sm bg-background border-2 border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-[0_4px_20px_rgba(124,92,255,0.2)] transition-all"
-                aria-label="Ask a question"
-              />
-              <div
-                class="absolute inset-0 rounded-lg pointer-events-none ring-1 ring-primary/20 animate-pulse-ring"
-              ></div>
-            </div>
-            <button
-              type="button"
-              id="askBtn"
-              class="btn-primary px-4 py-3 flex-shrink-0 shadow-[0_4px_20px_rgba(124,92,255,0.4)]"
-              aria-label="Submit question"
+      <!-- Footer -->
+      <footer class="footer-social px-6 py-4 mt-auto flex-shrink-0">
+        <div class="flex items-center justify-end">
+          <div class="flex items-center gap-4">
+            <a
+              href="https://github.com/samuxbuilds/capsummarize"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+              aria-label="GitHub"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                ></path>
+              <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
               </svg>
-            </button>
+            </a>
+            <a
+              href="https://x.com/samuxbuilds"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+              aria-label="Twitter"
+            >
+              <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+              </svg>
+            </a>
           </div>
-          <div id="qaResponse" class="hidden">
-            <div class="p-4 bg-background rounded-lg border border-border">
-              <div class="flex items-start justify-between mb-2">
-                <h4 class="text-sm font-semibold">Answer:</h4>
-                <button type="button" id="clearQaBtn" class="btn-icon" title="Clear answer">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-              <div id="qaAnswer" class="text-sm text-muted-foreground markdown-content space-y-2">
-                <!-- Answer will be inserted here -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer Actions -->
-      <footer
-        id="footer"
-        class="bg-card border-t border-border px-6 py-3 flex-shrink-0"
-        role="contentinfo"
-      >
-        <div class="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            id="speakBtn"
-            class="btn-icon"
-            title="Read summary aloud"
-            aria-label="Read summary aloud"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-              ></path>
-            </svg>
-          </button>
-          <button
-            type="button"
-            id="copyBtn"
-            class="btn-icon"
-            title="Copy summary"
-            aria-label="Copy summary to clipboard"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              ></path>
-            </svg>
-          </button>
-          <button
-            type="button"
-            id="downloadBtn"
-            class="btn-icon"
-            title="Download summary"
-            aria-label="Download summary as markdown"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              ></path>
-            </svg>
-          </button>
         </div>
       </footer>
+      </main>
     </div>
 
     <!-- External scripts -->

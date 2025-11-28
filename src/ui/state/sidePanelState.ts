@@ -12,7 +12,6 @@ export class SidePanelState {
   public currentUrl: string | null = null;
   public currentVariant: string = 'default';
   public includeTimestampsPreference: boolean = false;
-  public isSpeaking: boolean = false;
   public selectedHistoryId: string | null = null;
 
   private constructor() {}
@@ -30,7 +29,6 @@ export class SidePanelState {
     this.currentVtt = null;
     this.currentUrl = null;
     this.currentVariant = 'default';
-    this.isSpeaking = false;
     this.selectedHistoryId = null;
   }
 

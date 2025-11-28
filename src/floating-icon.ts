@@ -165,7 +165,7 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
 
     // User requested to place before the "Grok actions" button
     // We look for the button with aria-label="Grok actions"
-    const selectors = [
+    const _selectors = [
       'button[aria-label="Grok actions"]',
       '[data-testid="GrokDrawerHeader"] button' // Fallback to buttons in header
     ];

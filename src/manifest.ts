@@ -1,9 +1,9 @@
-import type { Manifest } from './types/manifest.js';
+import type { WebExtensionManifest } from './types/manifest.js';
 
-const manifest: Manifest.WebExtensionManifest = {
+const manifest: WebExtensionManifest = {
   manifest_version: 3,
   name: 'CapSummarize',
-  version: '1.0.1',
+  version: '1.0.2',
   description: 'AI-powered video caption summaries',
   permissions: ['scripting', 'tabs', 'sidePanel'],
   host_permissions: [
@@ -13,7 +13,6 @@ const manifest: Manifest.WebExtensionManifest = {
     'https://*.udemy.com/*',
     'https://*.zoom.us/*',
     'https://x.com/*',
-    'https://api.capsummarize.app/*',
   ],
   optional_host_permissions: [
     'https://chatgpt.com/*',
