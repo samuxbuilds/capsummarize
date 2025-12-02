@@ -3,8 +3,8 @@ import type { WebExtensionManifest } from './types/manifest.js';
 const manifest: WebExtensionManifest = {
   manifest_version: 3,
   name: 'CapSummarize',
-  version: '1.0.2',
-  description: 'AI-powered video caption summaries',
+  version: '1.1.0',
+  description: 'AI-powered video caption summaries, images & video generation',
   permissions: ['scripting', 'tabs', 'sidePanel', 'clipboardWrite'],
   host_permissions: [
     'https://*.youtube.com/*',
