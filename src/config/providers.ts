@@ -71,6 +71,7 @@ export type Provider =
   | 'meta'
   | 'mistral'
   | 'perplexity'
+  | 'scira'
   | 't3'
   | 'zAI'
   | 'quillBot';
@@ -206,6 +207,14 @@ export const providers: Record<Provider, ProviderConfig> = {
       url: 'https://quillbot.com/ai-chat',
       promptSelector: 'textarea[data-testid="ai-chat-input"]',
       submitSelector: 'button[data-testid="quill-chat-send-button"]',
+    },
+  },
+  scira: {
+    icon: '../ui/llm-providers/scira.svg',
+    textConfig: {
+      url: 'https://scira.ai/',
+      promptSelector: 'textarea',
+      submitSelector: 'textarea + div > :last-child button:last-child',
     },
   },
 };

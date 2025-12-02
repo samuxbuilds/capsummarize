@@ -66,6 +66,7 @@ export function getProviderDisplayName(provider: Provider): string {
     mistral: 'Mistral',
     perplexity: 'Perplexity',
     quillBot: 'QuillBot',
+    scira: 'Scira',
   };
   return displayNames[provider] || provider;
 }
