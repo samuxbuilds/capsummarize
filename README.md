@@ -26,21 +26,21 @@ See what CapSummarize can generate! All examples below were created from real Yo
 
 | Style                   | Without Reference                                            | With Reference                                                                 |
 | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| **MrBeast Style**       | ![MrBeast](examples/images/generated-images/mr-beast.png)    | ![MrBeast with ref](examples/images/generated-images/mr-beast-with-ref.png)    |
-| **Casey Neistat Style** | ![Casey](examples/images/generated-images/casey-neistat.png) | ![Casey with ref](examples/images/generated-images/casey-neistat-with-ref.png) |
-| **Theo/Tech Style**     | ![Theo](examples/images/generated-images/theo.png)           | ![Theo with ref](examples/images/generated-images/theo-with-ref.png)           |
-| **5-Min Crafts Style**  | ![5-Min](examples/images/generated-images/5-min-crafts.png)  | ![5-Min with ref](examples/images/generated-images/5-min-crafts-with-ref.png)  |
-| **General Thumbnail**   | ![General](examples/images/generated-images/general.png)     | ![General with ref](examples/images/generated-images/general-with-ref.png)     |
+| **MrBeast Style**       | ![MrBeast](examples/images/generated-images/mr-beast.webp)    | ![MrBeast with ref](examples/images/generated-images/mr-beast-with-ref.webp)    |
+| **Casey Neistat Style** | ![Casey](examples/images/generated-images/casey-neistat.webp) | ![Casey with ref](examples/images/generated-images/casey-neistat-with-ref.webp) |
+| **Theo/Tech Style**     | ![Theo](examples/images/generated-images/theo.webp)           | ![Theo with ref](examples/images/generated-images/theo-with-ref.webp)           |
+| **5-Min Crafts Style**  | ![5-Min](examples/images/generated-images/5-min-crafts.webp)  | ![5-Min with ref](examples/images/generated-images/5-min-crafts-with-ref.webp)  |
+| **General Thumbnail**   | ![General](examples/images/generated-images/general.webp)     | ![General with ref](examples/images/generated-images/general-with-ref.webp)     |
 
 ### 🖼️ Other Image Styles
 
 | Infographic                                                      | Mind Map                                                   | Comic Strip                                          |
 | ---------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
-| ![Infographic](examples/images/generated-images/infographic.png) | ![Mind Map](examples/images/generated-images/mind-map.png) | ![Comic](examples/images/generated-images/comic.png) |
+| ![Infographic](examples/images/generated-images/infographic.webp) | ![Mind Map](examples/images/generated-images/mind-map.webp) | ![Comic](examples/images/generated-images/comic.webp) |
 
 | Whiteboard                                                     | Quote Card                                                     | Scene                                                |
 | -------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
-| ![Whiteboard](examples/images/generated-images/whiteboard.png) | ![Quote Card](examples/images/generated-images/quote-card.png) | ![Scene](examples/images/generated-images/scene.png) |
+| ![Whiteboard](examples/images/generated-images/whiteboard.webp) | ![Quote Card](examples/images/generated-images/quote-card.webp) | ![Scene](examples/images/generated-images/scene.webp) |
 
 ### 📝 Text Summary Examples
 
