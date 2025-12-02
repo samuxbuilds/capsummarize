@@ -21,22 +21,22 @@ Generate eye-catching thumbnails in different creator styles:
 
 | Style             | Preview                                             | With Reference                                                   |
 | ----------------- | --------------------------------------------------- | ---------------------------------------------------------------- |
-| **MrBeast**       | ![MrBeast](images/generated-images/mr-beast.png)    | ![MrBeast Ref](images/generated-images/mr-beast-with-ref.png)    |
-| **Casey Neistat** | ![Casey](images/generated-images/casey-neistat.png) | ![Casey Ref](images/generated-images/casey-neistat-with-ref.png) |
-| **Theo/Tech**     | ![Theo](images/generated-images/theo.png)           | ![Theo Ref](images/generated-images/theo-with-ref.png)           |
-| **5-Min Crafts**  | ![5-Min](images/generated-images/5-min-crafts.png)  | ![5-Min Ref](images/generated-images/5-min-crafts-with-ref.png)  |
-| **General**       | ![General](images/generated-images/general.png)     | ![General Ref](images/generated-images/general-with-ref.png)     |
+| **MrBeast**       | ![MrBeast](images/generated-images/mr-beast.webp)    | ![MrBeast Ref](images/generated-images/mr-beast-with-ref.webp)    |
+| **Casey Neistat** | ![Casey](images/generated-images/casey-neistat.webp) | ![Casey Ref](images/generated-images/casey-neistat-with-ref.webp) |
+| **Theo/Tech**     | ![Theo](images/generated-images/theo.webp)           | ![Theo Ref](images/generated-images/theo-with-ref.webp)           |
+| **5-Min Crafts**  | ![5-Min](images/generated-images/5-min-crafts.webp)  | ![5-Min Ref](images/generated-images/5-min-crafts-with-ref.webp)  |
+| **General**       | ![General](images/generated-images/general.webp)     | ![General Ref](images/generated-images/general-with-ref.webp)     |
 
 ### Other Image Styles
 
 | Style           | Preview                                                 | Description                      |
 | --------------- | ------------------------------------------------------- | -------------------------------- |
-| **Infographic** | ![Infographic](images/generated-images/infographic.png) | Visual data representation       |
-| **Mind Map**    | ![Mind Map](images/generated-images/mind-map.png)       | Organic tree-style concept map   |
-| **Comic Strip** | ![Comic](images/generated-images/comic.png)             | Comic-style visual story         |
-| **Whiteboard**  | ![Whiteboard](images/generated-images/whiteboard.png)   | Hand-drawn diagram aesthetic     |
-| **Quote Card**  | ![Quote Card](images/generated-images/quote-card.png)   | Shareable quote with key insight |
-| **Scene**       | ![Scene](images/generated-images/scene.png)             | Key moment visualization         |
+| **Infographic** | ![Infographic](images/generated-images/infographic.webp) | Visual data representation       |
+| **Mind Map**    | ![Mind Map](images/generated-images/mind-map.webp)       | Organic tree-style concept map   |
+| **Comic Strip** | ![Comic](images/generated-images/comic.webp)             | Comic-style visual story         |
+| **Whiteboard**  | ![Whiteboard](images/generated-images/whiteboard.webp)   | Hand-drawn diagram aesthetic     |
+| **Quote Card**  | ![Quote Card](images/generated-images/quote-card.webp)   | Shareable quote with key insight |
+| **Scene**       | ![Scene](images/generated-images/scene.webp)             | Key moment visualization         |
 
 ### Reference Image
 

@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/casey-neistat.png)
+![Preview](./generated-images/casey-neistat.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/casey-neistat-with-ref.png)
+![Preview](./generated-images/casey-neistat-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)

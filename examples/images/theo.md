@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/theo.png)
+![Preview](./generated-images/theo.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/theo-with-ref.png)
+![Preview](./generated-images/theo-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)

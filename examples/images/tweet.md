@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/tweet.png)
+![Preview](./generated-images/tweet.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/tweet-with-ref.png)
+![Preview](./generated-images/tweet-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)

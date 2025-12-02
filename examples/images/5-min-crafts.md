@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/5-min-crafts.png)
+![Preview](./generated-images/5-min-crafts.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/5-min-crafts-with-ref.png)
+![Preview](./generated-images/5-min-crafts-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)

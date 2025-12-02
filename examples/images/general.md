@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/general.png)
+![Preview](./generated-images/general.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/general-with-ref.png)
+![Preview](./generated-images/general-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)

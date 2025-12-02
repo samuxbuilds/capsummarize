@@ -6,13 +6,13 @@ This folder contains AI-generated image examples from CapSummarize.
 
 Each example follows this naming convention:
 ```
-{video-slug}-{style}.png
+{video-slug}-{style}.webp
 ```
 
 For example:
-- `ai-engineering-explained-thumbnail-mrbeast.png`
-- `react-19-features-infographic.png`
-- `cooking-tutorial-comic.png`
+- `ai-engineering-explained-thumbnail-mrbeast.webp`
+- `react-19-features-infographic.webp`
+- `cooking-tutorial-comic.webp`
 
 ## Adding Examples
 
@@ -31,7 +31,7 @@ For example:
 
 ## Preview
 
-![Preview](./filename.png)
+![Preview](./filename.webp)
 
 ## Prompt Used
 
@@ -46,17 +46,17 @@ For example:
 - Thumbnail (Theo Style)
 - Thumbnail (5-Min Crafts Style)
 - Infographic
-    ![Preview](./generated-images/infographic.png)
+    ![Preview](./generated-images/infographic.webp)
 - Comic Strip
-    ![Preview](./generated-images/comic.png)
+    ![Preview](./generated-images/comic.webp)
 - Mind Map
-    ![Preview](./generated-images/mind-map.png)
+    ![Preview](./generated-images/mind-map.webp)
 - Whiteboard
-    ![Preview](./generated-images/whiteboard.png)
+    ![Preview](./generated-images/whiteboard.webp)
 - Quote Card
-    ![Preview](./generated-images/quote-card.png)
+    ![Preview](./generated-images/quote-card.webp)
 - Scene Visualization
-    ![Preview](./generated-images/scene.png)
+    ![Preview](./generated-images/scene.webp)
 
 ## Supported Providers
 

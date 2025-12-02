@@ -7,10 +7,10 @@
 
 ---
 ## Preview ( Without Image Reference )
-![Preview](./generated-images/mr-beast.png)
+![Preview](./generated-images/mr-beast.webp)
 
 ## Preview ( With Image Reference )
-![Preview](./generated-images/mr-beast-with-ref.png)
+![Preview](./generated-images/mr-beast-with-ref.webp)
 
 ## Reference Image
 ![Reference](./generated-images/reference.jpeg)
