@@ -1,7 +1,7 @@
 {
   "name": "capsummarize-extension",
-  "version": "1.0.2",
-  "description": "AI-powered video caption summaries",
+  "version": "1.1.0",
+  "description": "Summarize videos, generate thumbnails, and repurpose content using AI—right inside YouTube, Drive, Zoom, and more.",
   "type": "module",
   "scripts": {
     "dev": "bun run build:env && bun run watch",
