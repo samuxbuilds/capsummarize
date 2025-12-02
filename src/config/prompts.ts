@@ -20,6 +20,7 @@
  * - Recap: 60-second interview-style summary recaps for rapid consumption
  * - Interview: Simplified Q&A format for interview and exam preparation
  * - X/Twitter: Viral threads with hooks and engagement optimization
+ * - Shorts/Reels/TikTok: Script ideas for vertical short-form video content
  *
  * IMAGE GENERATION VARIANTS (Requires: ChatGPT, Gemini, or Grok):
  * - Thumbnail: Eye-catching video thumbnail designs
@@ -84,6 +85,7 @@ export type PromptVariant =
   | 'cheatsheet'
   | 'recap'
   | 'interview'
+  | 'shorts'
   // Image generation variants
   | 'thumbnail'
   | 'thumbnail-mrbeast'
@@ -1228,6 +1230,136 @@ Each tweet should:
 - **Emotional flow** — mix surprise, humor, and insight  
 - **Readable layout** — every tweet scannable in 3 seconds  
 - **Human rhythm** — not robotic or repetitive
+
+---
+
+### SOURCE TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'shorts',
+    label: 'Shorts/Reels/TikTok',
+    description: 'Script ideas for vertical short-form video content',
+    prompt: `You are a **viral short-form video strategist** who creates content for TikTok, Instagram Reels, and YouTube Shorts.
+Extract the most engaging moments from this video and turn them into ready-to-film short-form content ideas.
+
+⚠️ **CRITICAL INSTRUCTION:**
+- **DO NOT ASK ANY QUESTIONS.** Generate the full content package immediately.
+- **AUTO-DETECT** the target audience from the transcript (developers, general audience, niche experts, etc.)
+- **AUTO-SELECT** the appropriate tone and complexity based on the content
+- **MAKE AUTONOMOUS DECISIONS** about style, hooks, and approach — do not wait for clarification
+- If the content is technical, adapt for a tech-savvy audience while keeping hooks accessible
+- If the content is general, keep it simple and dramatic for mass appeal
+
+📱 **Follow this structure exactly:**
+
+---
+
+## 🎬 Content Overview
+
+**Original Video Topic:** [1 sentence summary]
+**Best Format for Shorts:** [Hook-based / Story / Tutorial / Hot Take / Reaction / List]
+**Viral Potential:** [High / Medium / Niche] — explain why
+
+---
+
+## 🔥 Top 5 Short-Form Video Ideas
+
+For each idea, provide:
+
+### Idea 1: [Catchy Title]
+
+**Hook (First 1-3 seconds):**
+- The exact words/action to start with
+- Must stop the scroll IMMEDIATELY
+- Examples: "Nobody's talking about this...", "POV:", "Wait for it..."
+
+**Script (15-60 seconds):**
+\`\`\`
+[Second-by-second breakdown]
+0:00 - [Hook - what you say/show]
+0:03 - [Setup - context in 1-2 sentences]
+0:08 - [Main point 1]
+0:15 - [Main point 2 or twist]
+0:25 - [Payoff/conclusion]
+0:30 - [CTA or loop point]
+\`\`\`
+
+**On-Screen Text:**
+- Text overlay 1: "[Exact text to display]"
+- Text overlay 2: "[Exact text to display]"
+
+**Visual Suggestions:**
+- Camera angle: [talking head / B-roll / screen recording / etc.]
+- Transitions: [jump cuts / zoom / swipe / etc.]
+- Props or setup needed
+
+**Hashtags:** #hashtag1 #hashtag2 #hashtag3 (5-8 relevant tags)
+
+**Why This Works:** [1-2 sentences on the psychology/trend this taps into]
+
+---
+
+[Repeat for Ideas 2-5]
+
+---
+
+## 📝 Ready-to-Use Hooks (Copy & Paste)
+
+Extract 8-10 hook variations from the content:
+
+1. "Here's what nobody tells you about [topic]..."
+2. "I was today years old when I learned..."
+3. "Stop scrolling if you [target audience]..."
+4. [Continue with content-specific hooks]
+
+---
+
+## 🎵 Audio/Sound Suggestions
+
+- **Trending sounds that fit:** [Describe 2-3 audio vibes]
+- **Original audio style:** [Voiceover tone, pacing, energy level]
+- **When to use music vs. talking:** [Guidance]
+
+---
+
+## ✂️ Key Clips to Extract
+
+If reusing footage from the original video:
+
+| Timestamp | What Happens | Why It's Gold |
+|-----------|--------------|---------------|
+| [X:XX] | [Description] | [Viral element] |
+| [X:XX] | [Description] | [Viral element] |
+| [X:XX] | [Description] | [Viral element] |
+
+---
+
+## 💡 Pro Tips for This Content
+
+1. **Best posting times:** [Based on content type]
+2. **Engagement bait:** [Question to ask in caption or comments]
+3. **Series potential:** [Can this be a part 1, 2, 3?]
+4. **Duet/Stitch opportunities:** [How others could interact]
+
+---
+
+## 📊 Quick Reference Card
+
+| Element | Recommendation |
+|---------|----------------|
+| Ideal length | [15s / 30s / 60s] |
+| Aspect ratio | 9:16 vertical |
+| Captions | [Style recommendation] |
+| CTA | [Best call-to-action] |
+| Post frequency | [If making a series] |
+
+---
+
+⚡ **Platform-Specific Notes:**
+- **TikTok:** [Any TikTok-specific advice]
+- **Instagram Reels:** [Any Reels-specific advice]  
+- **YouTube Shorts:** [Any Shorts-specific advice]
 
 ---
 
