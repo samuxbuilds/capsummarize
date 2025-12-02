@@ -53,71 +53,69 @@ export function injectFloatingIcon(): void {
     isInjecting = false;
   };
 
+  function setupYouTubePlacement(
+    element: HTMLElement,
+    inlineStyleFn: (element: HTMLElement) => void,
+    fallbackMount: () => void,
+    onComplete: () => void
+  ): boolean {
+    if (!location.hostname.includes('youtube.com')) {
+      return false;
+    }
 
+    const selectors = [
+      'ytd-watch-metadata #top-level-buttons-computed',
+      '#above-the-fold #top-level-buttons-computed',
+      '#top-level-buttons-computed',
+    ];
 
-function setupYouTubePlacement(
-  element: HTMLElement,
-  inlineStyleFn: (element: HTMLElement) => void,
-  fallbackMount: () => void,
-  onComplete: () => void
-): boolean {
-  if (!location.hostname.includes('youtube.com')) {
-    return false;
+    // Try to find any of the selectors
+    const tryMount = (): boolean => {
+      for (const selector of selectors) {
+        const container = document.querySelector<HTMLElement>(selector);
+        if (container) {
+          inlineStyleFn(element);
+          const firstButton = container.firstElementChild;
+          container.insertBefore(element, firstButton ?? null);
+          onComplete();
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (tryMount()) return true;
+
+    // Poll for element instead of observing entire body
+    let attempts = 0;
+    const maxAttempts = 20; // 10 seconds total
+    const interval = setInterval(() => {
+      attempts++;
+      if (tryMount()) {
+        clearInterval(interval);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (!element.isConnected) {
+          fallbackMount();
+        }
+        onComplete();
+      }
+    }, 500);
+
+    return true;
   }
 
-  const selectors = [
-    'ytd-watch-metadata #top-level-buttons-computed',
-    '#above-the-fold #top-level-buttons-computed',
-    '#top-level-buttons-computed',
-  ];
-
-  // Try to find any of the selectors
-  const tryMount = (): boolean => {
-    for (const selector of selectors) {
-      const container = document.querySelector<HTMLElement>(selector);
-      if (container) {
-        inlineStyleFn(element);
-        const firstButton = container.firstElementChild;
-        container.insertBefore(element, firstButton ?? null);
-        onComplete();
-        return true;
-      }
-    }
-    return false;
-  };
-
-  if (tryMount()) return true;
-
-  // Poll for element instead of observing entire body
-  let attempts = 0;
-  const maxAttempts = 20; // 10 seconds total
-  const interval = setInterval(() => {
-    attempts++;
-    if (tryMount()) {
-      clearInterval(interval);
-    } else if (attempts >= maxAttempts) {
-      clearInterval(interval);
-      if (!element.isConnected) {
-        fallbackMount();
-      }
-      onComplete();
-    }
-  }, 500);
-
-  return true;
-}
-
-function applyYouTubeButtonStyles(element: HTMLElement): void {
-  element.innerHTML = `
+  function applyYouTubeButtonStyles(element: HTMLElement): void {
+    element.innerHTML = `
     <span class="ai-summary-inline-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:rgba(248,250,252,0.15);color:#f4a7d8;">
       ${SPARKLES_ICON_SVG}
     </span>
     <span class="ai-summary-inline-label" style="font-size:14px;font-weight:600;color:#f8fafc;letter-spacing:0.01em;">Summarize</span>
   `;
 
-  element.setAttribute(
-    'style',
-    `
+    element.setAttribute(
+      'style',
+      `
       position: static;
       width: auto;
       height: auto;
@@ -134,22 +132,22 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     `
-  );
+    );
 
-  element.onmouseenter = () => {
-    element.style.transform = 'translateY(-1px) scale(1.01)';
-    element.style.boxShadow = '0 6px 22px rgba(236, 72, 153, 0.4)';
-  };
+    element.onmouseenter = () => {
+      element.style.transform = 'translateY(-1px) scale(1.01)';
+      element.style.boxShadow = '0 6px 22px rgba(236, 72, 153, 0.4)';
+    };
 
-  element.onmouseleave = () => {
-    element.style.transform = 'scale(1)';
-    element.style.boxShadow = '0 4px 18px rgba(15, 23, 42, 0.35)';
-  };
+    element.onmouseleave = () => {
+      element.style.transform = 'scale(1)';
+      element.style.boxShadow = '0 4px 18px rgba(15, 23, 42, 0.35)';
+    };
 
-  element.dataset.variant = 'youtube-inline';
-}
+    element.dataset.variant = 'youtube-inline';
+  }
 
-// Removed X/Twitter placement — this module now only handles YouTube and a floating icon
+  // Removed X/Twitter placement — this module now only handles YouTube and a floating icon
 
   // Removed X/Twitter button styles — not used here anymore
 
@@ -167,56 +165,56 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
     // We look for the button with aria-label="Grok actions"
     const _selectors = [
       'button[aria-label="Grok actions"]',
-      '[data-testid="GrokDrawerHeader"] button' // Fallback to buttons in header
+      '[data-testid="GrokDrawerHeader"] button', // Fallback to buttons in header
     ];
 
     const tryAttach = (): boolean => {
       // First try to find the specific Grok actions button
       const grokButton = document.querySelector('button[aria-label="Grok actions"]');
-      
+
       if (grokButton) {
         // We want to insert BEFORE this button's container if possible, or just before the button itself.
         // Looking at the structure provided:
         // <div class="css-175oi2r r-18u37iz r-1h0z5md"><button ...>
         // The button is inside a div. We should probably insert before that div if we can find it,
         // or just before the button if it's a direct child of a flex container.
-        
+
         const parent = grokButton.parentElement;
         if (parent) {
-           // Check if parent is the flex container holding the buttons
-           // The structure shows: 
-           // <div class="css-175oi2r r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep">
-           //   <div class="css-175oi2r r-18u37iz r-1h0z5md"><button ...></div>
-           //   <div class="css-175oi2r r-1awozwy r-6koalj r-18u37iz">...</div>
-           // </div>
-           
-           // So we likely want to insert before the parent of the button (the div wrapper)
-           // if that parent is a child of the main row.
-           
-           const grandParent = parent.parentElement;
-           if (grandParent) {
-             inlineStyleFn(element);
-             grandParent.insertBefore(element, parent);
-             return true;
-           }
-           
-           // Fallback: insert before the button directly
-           inlineStyleFn(element);
-           parent.insertBefore(element, grokButton);
-           return true;
+          // Check if parent is the flex container holding the buttons
+          // The structure shows:
+          // <div class="css-175oi2r r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep">
+          //   <div class="css-175oi2r r-18u37iz r-1h0z5md"><button ...></div>
+          //   <div class="css-175oi2r r-1awozwy r-6koalj r-18u37iz">...</div>
+          // </div>
+
+          // So we likely want to insert before the parent of the button (the div wrapper)
+          // if that parent is a child of the main row.
+
+          const grandParent = parent.parentElement;
+          if (grandParent) {
+            inlineStyleFn(element);
+            grandParent.insertBefore(element, parent);
+            return true;
+          }
+
+          // Fallback: insert before the button directly
+          inlineStyleFn(element);
+          parent.insertBefore(element, grokButton);
+          return true;
         }
       }
 
       // Fallback to previous method if specific button not found
       const header = document.querySelector('[data-testid="GrokDrawerHeader"]');
       if (header) {
-         inlineStyleFn(element);
-         if (header.firstChild) {
-           header.insertBefore(element, header.firstChild);
-         } else {
-           header.appendChild(element);
-         }
-         return true;
+        inlineStyleFn(element);
+        if (header.firstChild) {
+          header.insertBefore(element, header.firstChild);
+        } else {
+          header.appendChild(element);
+        }
+        return true;
       }
 
       return false;
@@ -276,7 +274,7 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       `
     );
-    
+
     // Force color to match X's text color
     element.style.color = 'rgba(239, 243, 244, 1.0)';
 
@@ -305,7 +303,7 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       '[data-purpose="video-controls"]',
       'div[class*="control-bar--control-bar"]',
       '.shaka-controls-container',
-      '.video-controls'
+      '.video-controls',
     ];
 
     const tryAttach = (): boolean => {
@@ -406,7 +404,7 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       '.rc-VideoControls',
       '.c-video-controls',
       '.video-js .vjs-control-bar',
-      'div[class*="video-controls"]'
+      'div[class*="video-controls"]',
     ];
 
     const tryAttach = (): boolean => {
@@ -516,7 +514,9 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       }
     };
 
-    if (setupYouTubePlacement(floatingIcon, applyYouTubeButtonStyles, mountFloatingIcon, onComplete)) {
+    if (
+      setupYouTubePlacement(floatingIcon, applyYouTubeButtonStyles, mountFloatingIcon, onComplete)
+    ) {
       logger.log('[Floating Icon] 🎯 YouTube placement initialized');
       return;
     }
@@ -526,12 +526,16 @@ function applyYouTubeButtonStyles(element: HTMLElement): void {
       return;
     }
 
-    if (setupCourseraPlacement(floatingIcon, applyCourseraButtonStyles, mountFloatingIcon, onComplete)) {
+    if (
+      setupCourseraPlacement(floatingIcon, applyCourseraButtonStyles, mountFloatingIcon, onComplete)
+    ) {
       logger.log('[Floating Icon] 🎯 Coursera placement initialized');
       return;
     }
 
-    if (setupTwitterPlacement(floatingIcon, applyTwitterButtonStyles, mountFloatingIcon, onComplete)) {
+    if (
+      setupTwitterPlacement(floatingIcon, applyTwitterButtonStyles, mountFloatingIcon, onComplete)
+    ) {
       logger.log('[Floating Icon] 🎯 Twitter/X placement initialized');
       return;
     }
@@ -720,18 +724,14 @@ function updateIconAppearance(isOpen: boolean): void {
   }
 
   if (icon.dataset.variant === 'udemy-inline') {
-    icon.style.background = isOpen
-      ? 'rgba(255, 255, 255, 0.3)'
-      : 'rgba(255, 255, 255, 0.2)';
+    icon.style.background = isOpen ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)';
     icon.style.borderColor = isOpen ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)';
     icon.style.transform = isOpen ? 'scale(1.02)' : 'scale(1)';
     return;
   }
 
   if (icon.dataset.variant === 'coursera-inline') {
-    icon.style.background = isOpen
-      ? '#00419e'
-      : '#0056D2';
+    icon.style.background = isOpen ? '#00419e' : '#0056D2';
     icon.style.transform = isOpen ? 'scale(1.02)' : 'scale(1)';
     return;
   }

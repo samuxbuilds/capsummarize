@@ -19,7 +19,7 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"server/**/*.ts\" \"src/**/*.html\""
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.html\""
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",

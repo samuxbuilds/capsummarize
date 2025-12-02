@@ -16,6 +16,7 @@ import {
 import { sidePanelState } from './sidePanelManager.js';
 import { getVttStorageKey } from './storageHelpers.js';
 import { vttCacheManager } from './vttCacheManager.js';
+import { MESSAGE_ACTIONS } from '../utils/constants.js';
 
 /**
  * Response type for message handlers
@@ -61,7 +62,7 @@ export async function handleVTTFound(
     try {
       chrome.runtime
         .sendMessage({
-          action: 'vttHistoryUpdated',
+          action: MESSAGE_ACTIONS.VTT_HISTORY_UPDATED,
           historyItem: {
             id: historyItem.id,
             title: historyItem.title,
@@ -206,19 +207,19 @@ export function setupMessageListener(): void {
       sendResponse: (response?: any) => void
     ): boolean | void => {
       // VTT Found: Content script detected a subtitle file
-      if (message.action === 'vttFound' && sender.tab?.id) {
+      if (message.action === MESSAGE_ACTIONS.VTT_FOUND && sender.tab?.id) {
         handleVTTFound(sender.tab.id, message, sendResponse);
         return true; // Keep async channel open
       }
 
       // Get VTT Status: Popup requesting VTT detection status
-      if (message.action === 'getVTTStatus') {
+      if (message.action === MESSAGE_ACTIONS.GET_VTT_STATUS) {
         handleGetVTTStatus(message.tabId || sender.tab?.id, sendResponse);
         return true; // Keep async channel open
       }
 
       // Get VTT Content: Popup requesting raw VTT text
-      if (message.action === 'getVTTContent') {
+      if (message.action === MESSAGE_ACTIONS.GET_VTT_CONTENT) {
         handleGetVTTContent(
           message.tabId || sender.tab?.id,
           message.tabUrl || sender.tab?.url,
@@ -228,7 +229,10 @@ export function setupMessageListener(): void {
       }
 
       // Open Side Panel: Floating icon or other component requests side panel
-      if (message.action === 'openSidePanel' || message.action === 'openSidePanelFromContent') {
+      if (
+        message.action === MESSAGE_ACTIONS.OPEN_SIDE_PANEL ||
+        message.action === MESSAGE_ACTIONS.OPEN_SIDE_PANEL_FROM_CONTENT
+      ) {
         const tabId = message.tabId || sender.tab?.id;
         if (!tabId) {
           sendResponse({ success: false, error: 'No tab ID available' });
@@ -239,13 +243,13 @@ export function setupMessageListener(): void {
       }
 
       // Side Panel Closed: Notification from side panel that it was closed
-      if (message.action === 'sidePanelClosed') {
+      if (message.action === MESSAGE_ACTIONS.SIDE_PANEL_CLOSED) {
         // This is handled in background.ts
         return false;
       }
 
       // Get VTT History: Request history summary
-      if (message.action === 'getVTTHistory') {
+      if (message.action === MESSAGE_ACTIONS.GET_VTT_HISTORY) {
         getHistorySummary()
           .then((history) => {
             sendResponse({ success: true, history });
@@ -257,7 +261,7 @@ export function setupMessageListener(): void {
       }
 
       // Get History Item: Request full history item including VTT content
-      if (message.action === 'getHistoryItem') {
+      if (message.action === MESSAGE_ACTIONS.GET_HISTORY_ITEM) {
         getHistoryItem(message.historyId)
           .then((item) => {
             if (item) {
@@ -273,7 +277,7 @@ export function setupMessageListener(): void {
       }
 
       // Clear VTT History: Remove all history items
-      if (message.action === 'clearVTTHistory') {
+      if (message.action === MESSAGE_ACTIONS.CLEAR_VTT_HISTORY) {
         clearHistory()
           .then(() => {
             sendResponse({ success: true });

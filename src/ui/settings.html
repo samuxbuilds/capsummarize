@@ -9,9 +9,12 @@
     />
     <title>CapSummarize - Settings</title>
     <!-- Load Inter Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="../styles/globals.css" />
   </head>
 
@@ -156,6 +159,45 @@
                     </p>
                   </div>
 
+                  <!-- Output Type Selection -->
+                  <div class="space-y-2">
+                    <label
+                      for="variantOutputType"
+                      class="text-sm font-medium text-foreground block"
+                    >
+                      Output Type <span class="text-destructive">*</span>
+                    </label>
+                    <select
+                      id="variantOutputType"
+                      class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                    >
+                      <option value="text">Text Summary</option>
+                      <option value="image">Image Generation</option>
+                      <option value="video">Video Generation</option>
+                    </select>
+                  </div>
+
+                  <!-- Thumbnail Style (Only for Image Output) -->
+                  <div id="thumbnailStyleContainer" class="space-y-2 hidden">
+                    <label
+                      for="variantThumbnailStyle"
+                      class="text-sm font-medium text-foreground block"
+                    >
+                      Thumbnail Style
+                      <span class="text-muted-foreground text-xs font-normal">(Optional)</span>
+                    </label>
+                    <select
+                      id="variantThumbnailStyle"
+                      class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                    >
+                      <option value="">None (Standard Image)</option>
+                      <!-- Will be populated dynamically -->
+                    </select>
+                    <p class="text-xs text-muted-foreground">
+                      Select a base style if creating a custom thumbnail variant
+                    </p>
+                  </div>
+
                   <!-- Description -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
@@ -287,54 +329,58 @@
                 <h2 class="text-base font-semibold mb-4">General Preferences</h2>
 
                 <div class="space-y-0">
-                  <!-- Default variant preference -->
+                  <!-- Default Text Style -->
                   <div class="flex items-start justify-between gap-6 py-4 border-b border-border">
                     <div class="flex-1">
-                      <p class="text-sm font-medium text-foreground mb-1.5">
-                        Default summary style
-                      </p>
+                      <p class="text-sm font-medium text-foreground mb-1.5">Default Text Style</p>
                       <p class="text-xs text-muted-foreground leading-relaxed">
-                        Choose your preferred summary style for new videos
+                        Preferred style for text summaries
                       </p>
                     </div>
                     <div class="relative z-50 min-w-[200px]">
-                      <button
-                        type="button"
-                        id="defaultVariantTrigger"
-                        class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors"
-                        aria-haspopup="listbox"
-                        aria-expanded="false"
+                      <select
+                        id="defaultVariantTextSelect"
+                        class="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                       >
-                        <div class="flex flex-col items-start overflow-hidden">
-                          <span id="defaultVariantTriggerText" class="block truncate font-medium"
-                            >Default</span
-                          >
-                        </div>
-                        <svg
-                          id="defaultVariantChevron"
-                          class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-hover:text-foreground"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 9l-7 7-7-7"
-                          ></path>
-                        </svg>
-                      </button>
-
-                      <div
-                        id="defaultVariantDropdown"
-                        class="absolute right-0 z-20 mt-1 w-full dropdown-menu !rounded-lg max-h-[300px] overflow-y-auto focus:outline-none hidden origin-top scale-95 opacity-0 transition-all duration-100 p-1"
-                        role="listbox"
-                      >
-                        <!-- Items will be populated dynamically -->
-                      </div>
+                        <!-- Populated dynamically -->
+                      </select>
                     </div>
-                    <select id="defaultVariantSelect" class="hidden"></select>
+                  </div>
+
+                  <!-- Default Image Style -->
+                  <div class="flex items-start justify-between gap-6 py-4 border-b border-border">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-foreground mb-1.5">Default Image Style</p>
+                      <p class="text-xs text-muted-foreground leading-relaxed">
+                        Preferred style for image generation
+                      </p>
+                    </div>
+                    <div class="relative z-40 min-w-[200px]">
+                      <select
+                        id="defaultVariantImageSelect"
+                        class="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      >
+                        <!-- Populated dynamically -->
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Default Video Style -->
+                  <div class="flex items-start justify-between gap-6 py-4 border-b border-border">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-foreground mb-1.5">Default Video Style</p>
+                      <p class="text-xs text-muted-foreground leading-relaxed">
+                        Preferred style for video generation
+                      </p>
+                    </div>
+                    <div class="relative z-30 min-w-[200px]">
+                      <select
+                        id="defaultVariantVideoSelect"
+                        class="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      >
+                        <!-- Populated dynamically -->
+                      </select>
+                    </div>
                   </div>
 
                   <!-- Include timestamps preference -->

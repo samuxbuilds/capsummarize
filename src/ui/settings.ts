@@ -10,6 +10,7 @@ import { showToast } from './ui-utils.js';
 import { logger } from '../utils/logger.js';
 import { getPromptVariants } from '../utils/variantsCache.js';
 import { SettingsForm, type SettingsFormElements } from './components/SettingsForm.js';
+import type { OutputType } from '../config/prompts.js';
 
 /**
  * Custom variant interface
@@ -20,13 +21,24 @@ export interface CustomVariant {
   prompt: string;
   createdAt: number;
   isCustom: true;
+  /**
+   * Output type: 'text' for summaries, 'image' for visual content
+   * @default 'text'
+   */
+  outputType?: OutputType;
+  /**
+   * Thumbnail style variant ID (optional, only for image output)
+   */
+  thumbnailStyle?: string;
 }
 
 /**
  * User preferences interface
  */
 export interface UserPreferences {
-  defaultVariant: string;
+  defaultVariantText: string;
+  defaultVariantImage: string;
+  defaultVariantVideo: string;
   includeTimestamps: boolean;
 }
 
@@ -37,7 +49,9 @@ export const USER_PREFERENCES_KEY = 'userPreferences';
  * Default preferences
  */
 const DEFAULT_PREFERENCES: UserPreferences = {
-  defaultVariant: 'default',
+  defaultVariantText: 'default',
+  defaultVariantImage: 'default',
+  defaultVariantVideo: 'default',
   includeTimestamps: false,
 };
 
@@ -85,13 +99,15 @@ interface SettingsElements {
   emptyState: HTMLElement;
 
   // Preferences
-  defaultVariantSelect: HTMLSelectElement;
-  defaultVariantTrigger: HTMLButtonElement;
-  defaultVariantTriggerText: HTMLElement;
-  defaultVariantChevron: HTMLElement;
-  defaultVariantDropdown: HTMLElement;
+  defaultVariantTextSelect: HTMLSelectElement;
+  defaultVariantImageSelect: HTMLSelectElement;
+  defaultVariantVideoSelect: HTMLSelectElement;
   includeTimestampsToggle: HTMLInputElement;
 
+  // Form
+  variantOutputType: HTMLSelectElement;
+  variantThumbnailStyle: HTMLSelectElement;
+  thumbnailStyleContainer: HTMLElement;
 }
 
 let elements: SettingsElements;
@@ -114,12 +130,19 @@ async function init(): Promise<void> {
     preferencesTab: document.getElementById('preferencesTab') as HTMLElement,
     customVariantsList: document.getElementById('customVariantsList') as HTMLElement,
     emptyState: document.getElementById('emptyState') as HTMLElement,
-    defaultVariantSelect: document.getElementById('defaultVariantSelect') as HTMLSelectElement,
-    defaultVariantTrigger: document.getElementById('defaultVariantTrigger') as HTMLButtonElement,
-    defaultVariantTriggerText: document.getElementById('defaultVariantTriggerText') as HTMLElement,
-    defaultVariantChevron: document.getElementById('defaultVariantChevron') as HTMLElement,
-    defaultVariantDropdown: document.getElementById('defaultVariantDropdown') as HTMLElement,
+    defaultVariantTextSelect: document.getElementById(
+      'defaultVariantTextSelect'
+    ) as HTMLSelectElement,
+    defaultVariantImageSelect: document.getElementById(
+      'defaultVariantImageSelect'
+    ) as HTMLSelectElement,
+    defaultVariantVideoSelect: document.getElementById(
+      'defaultVariantVideoSelect'
+    ) as HTMLSelectElement,
     includeTimestampsToggle: document.getElementById('includeTimestampsToggle') as HTMLInputElement,
+    variantOutputType: document.getElementById('variantOutputType') as HTMLSelectElement,
+    variantThumbnailStyle: document.getElementById('variantThumbnailStyle') as HTMLSelectElement,
+    thumbnailStyleContainer: document.getElementById('thumbnailStyleContainer') as HTMLElement,
   };
 
   // Initialize SettingsForm
@@ -181,35 +204,34 @@ function setupEventListeners(): void {
   }
 
   // Preferences
-  if (elements.defaultVariantSelect) {
-    elements.defaultVariantSelect.addEventListener('change', handlePreferenceChange);
+  if (elements.defaultVariantTextSelect) {
+    elements.defaultVariantTextSelect.addEventListener('change', handlePreferenceChange);
   }
-  if (elements.defaultVariantTrigger) {
-    elements.defaultVariantTrigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleVariantDropdown();
-    });
+  if (elements.defaultVariantImageSelect) {
+    elements.defaultVariantImageSelect.addEventListener('change', handlePreferenceChange);
+  }
+  if (elements.defaultVariantVideoSelect) {
+    elements.defaultVariantVideoSelect.addEventListener('change', handlePreferenceChange);
   }
   if (elements.includeTimestampsToggle) {
     elements.includeTimestampsToggle.addEventListener('change', handlePreferenceChange);
   }
 
-  // Close dropdown when clicking outside
-  window.addEventListener('click', (e) => {
-    if (
-      elements.defaultVariantDropdown &&
-      !elements.defaultVariantDropdown.classList.contains('hidden')
-    ) {
-      const target = e.target as HTMLElement;
-      if (
-        !elements.defaultVariantDropdown.contains(target) &&
-        !elements.defaultVariantTrigger?.contains(target)
-      ) {
-        closeVariantDropdown();
+  // Form: Show/Hide Thumbnail Style based on Output Type
+  if (elements.variantOutputType) {
+    elements.variantOutputType.addEventListener('change', async () => {
+      const type = elements.variantOutputType.value;
+      if (type === 'image') {
+        elements.thumbnailStyleContainer.classList.remove('hidden');
+        // Populate thumbnail styles if empty
+        if (elements.variantThumbnailStyle.options.length <= 1) {
+          await populateThumbnailStyles();
+        }
+      } else {
+        elements.thumbnailStyleContainer.classList.add('hidden');
       }
-    }
-  });
-
+    });
+  }
 }
 
 /**
@@ -242,6 +264,8 @@ async function handleFormSubmit(
   isEdit: boolean
 ): Promise<void> {
   const { variant, description, prompt } = data;
+  const outputType = (elements.variantOutputType.value as OutputType) || 'text';
+  const thumbnailStyle = elements.variantThumbnailStyle.value || undefined;
 
   // Validation
   if (!variant || !description || !prompt) {
@@ -291,6 +315,8 @@ async function handleFormSubmit(
       prompt,
       createdAt,
       isCustom: true,
+      outputType,
+      thumbnailStyle,
     };
 
     // Remove existing variant with same ID
@@ -349,9 +375,15 @@ async function loadAndRenderVariants(): Promise<void> {
     // Re-populate variant dropdown to include custom variants
     await populateVariantDropdown();
 
-    // Restore selected preference (only if element exists)
-    if (elements.defaultVariantSelect) {
-      elements.defaultVariantSelect.value = userPreferences.defaultVariant;
+    // Restore selected preferences
+    if (elements.defaultVariantTextSelect) {
+      elements.defaultVariantTextSelect.value = userPreferences.defaultVariantText;
+    }
+    if (elements.defaultVariantImageSelect) {
+      elements.defaultVariantImageSelect.value = userPreferences.defaultVariantImage;
+    }
+    if (elements.defaultVariantVideoSelect) {
+      elements.defaultVariantVideoSelect.value = userPreferences.defaultVariantVideo;
     }
 
     renderVariantsList();
@@ -422,8 +454,17 @@ function createVariantCard(variant: CustomVariant): string {
             <span class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">Custom</span>
           </div>
           <p class="text-sm text-foreground mb-3 leading-relaxed">${escapeHtml(variant.description)}</p>
-          <div class="text-xs text-muted-foreground font-mono leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/50">
             ${escapeHtml(truncatedPrompt)}
+          </div>
+          <div class="flex gap-2 mt-2">
+            <span class="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+              ${variant.outputType || 'TEXT'}
+            </span>
+            ${
+              variant.thumbnailStyle
+                ? `<span class="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">THUMBNAIL: ${escapeHtml(variant.thumbnailStyle)}</span>`
+                : ''
+            }
           </div>
           <p class="text-xs text-muted-foreground/60 mt-3">Created ${date}</p>
         </div>
@@ -525,155 +566,71 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Toggle custom variant dropdown
+ * Populate thumbnail styles for the form
  */
-function toggleVariantDropdown(): void {
-  if (!elements.defaultVariantDropdown || !elements.defaultVariantChevron) return;
+async function populateThumbnailStyles(): Promise<void> {
+  try {
+    const { getThumbnailPromptVariants } = await import('../utils/variantsCache.js');
+    const variants = await getThumbnailPromptVariants();
 
-  const isHidden = elements.defaultVariantDropdown.classList.contains('hidden');
+    elements.variantThumbnailStyle.innerHTML = '<option value="">None (Standard Image)</option>';
 
-  if (isHidden) {
-    // Open
-    elements.defaultVariantDropdown.classList.remove('hidden');
-    // Small delay to allow display:block to apply before opacity transition
-    requestAnimationFrame(() => {
-      if (elements.defaultVariantDropdown) {
-        elements.defaultVariantDropdown.classList.remove('opacity-0', 'scale-95');
-        elements.defaultVariantDropdown.classList.add('opacity-100', 'scale-100');
-      }
+    variants.forEach((v) => {
+      const option = document.createElement('option');
+      option.value = v.variant;
+      option.textContent = v.label;
+      elements.variantThumbnailStyle.appendChild(option);
     });
-    elements.defaultVariantTrigger?.setAttribute('aria-expanded', 'true');
-    if (elements.defaultVariantChevron) {
-      elements.defaultVariantChevron.style.transform = 'rotate(180deg)';
-    }
-  } else {
-    closeVariantDropdown();
+  } catch (err) {
+    console.error('Failed to load thumbnail styles', err);
   }
 }
 
 /**
- * Close custom variant dropdown
- */
-function closeVariantDropdown(): void {
-  if (!elements.defaultVariantDropdown || !elements.defaultVariantChevron) return;
-
-  elements.defaultVariantDropdown.classList.remove('opacity-100', 'scale-100');
-  elements.defaultVariantDropdown.classList.add('opacity-0', 'scale-95');
-
-  setTimeout(() => {
-    if (elements.defaultVariantDropdown) {
-      elements.defaultVariantDropdown.classList.add('hidden');
-    }
-  }, 100); // Match transition duration
-
-  elements.defaultVariantTrigger?.setAttribute('aria-expanded', 'false');
-  if (elements.defaultVariantChevron) {
-    elements.defaultVariantChevron.style.transform = 'rotate(0deg)';
-  }
-}
-
-/**
- * Handle variant selection from custom dropdown
- */
-function handleVariantSelection(variantId: string, label: string): void {
-  // Update trigger text
-  if (elements.defaultVariantTriggerText) {
-    elements.defaultVariantTriggerText.textContent = label;
-  }
-
-  // Sync hidden select
-  if (elements.defaultVariantSelect) {
-    elements.defaultVariantSelect.value = variantId;
-    // Trigger change event manually since programmatic change doesn't fire it
-    handlePreferenceChange();
-  }
-
-  // Update selected state in dropdown
-  const items = elements.defaultVariantDropdown?.querySelectorAll('.dropdown-item');
-  items?.forEach((item) => {
-    if ((item as HTMLElement).dataset.value === variantId) {
-      item.classList.add('selected');
-      item.setAttribute('aria-selected', 'true');
-    } else {
-      item.classList.remove('selected');
-      item.setAttribute('aria-selected', 'false');
-    }
-  });
-
-  // Close dropdown
-  closeVariantDropdown();
-}
-
-/**
- * Populate the variant dropdown with all available options
+ * Populate the variant dropdowns with all available options
  */
 async function populateVariantDropdown(): Promise<void> {
-  const dropdown = elements.defaultVariantDropdown;
-  const select = elements.defaultVariantSelect;
-
-  if (!dropdown || !select) {
-    // Elements may not exist if preferences tab hasn't been rendered yet
-    return;
-  }
-
-  dropdown.innerHTML = '';
-  select.innerHTML = '';
-
   try {
-    // Get variants from API with caching
-    const variants = await getPromptVariants();
+    const { getTextPromptVariants, getNonThumbnailImagePromptVariants, getVideoPromptVariants } =
+      await import('../utils/variantsCache.js');
+
+    const textVariants = await getTextPromptVariants();
+    const imageVariants = await getNonThumbnailImagePromptVariants();
+    const videoVariants = await getVideoPromptVariants();
     const customVariants = await loadCustomVariants();
 
-    const renderOption = (variant: any, isCustom: boolean) => {
-      // Populate custom dropdown item
-      const item = document.createElement('div');
-      item.className = 'dropdown-item';
-      item.setAttribute('role', 'option');
-      item.dataset.value = variant.variant;
-      item.dataset.label = variant.label || variant.variant;
-      item.dataset.description = variant.description;
+    const populateSelect = (select: HTMLSelectElement, variants: any[], type: OutputType) => {
+      if (!select) return;
+      select.innerHTML = '';
 
-      const label = variant.label || variant.variant;
-      const customBadge = isCustom
-        ? '<span class="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Custom</span>'
-        : '';
-
-      item.innerHTML = `
-        <div class="font-medium text-sm text-foreground group-hover:text-primary transition-colors flex items-center">
-          ${escapeHtml(label)}
-          ${customBadge}
-        </div>
-        <div class="text-xs text-muted-foreground mt-0.5 leading-relaxed">${escapeHtml(variant.description)}</div>
-      `;
-
-      item.addEventListener('click', () => {
-        handleVariantSelection(variant.variant, label);
+      // System variants
+      variants.forEach((v) => {
+        const option = document.createElement('option');
+        option.value = v.variant;
+        option.textContent = v.label || v.variant;
+        select.appendChild(option);
       });
 
-      dropdown.appendChild(item);
-
-      // Keep hidden select synced
-      const option = document.createElement('option');
-      option.value = variant.variant;
-      option.textContent = label;
-      select.appendChild(option);
+      // Custom variants for this type
+      const relevantCustom = customVariants.filter((v) => (v.outputType || 'text') === type);
+      if (relevantCustom.length > 0) {
+        const group = document.createElement('optgroup');
+        group.label = 'Custom Variants';
+        relevantCustom.forEach((v) => {
+          const option = document.createElement('option');
+          option.value = v.variant;
+          option.textContent = v.variant; // Custom variants don't have label property usually
+          group.appendChild(option);
+        });
+        select.appendChild(group);
+      }
     };
 
-    // Render system variants
-    variants.forEach((variant) => renderOption(variant, false));
+    populateSelect(elements.defaultVariantTextSelect, textVariants, 'text');
+    populateSelect(elements.defaultVariantImageSelect, imageVariants, 'image');
+    populateSelect(elements.defaultVariantVideoSelect, videoVariants, 'video');
 
-    // Add separator if there are custom variants
-    if (customVariants.length > 0) {
-      const separator = document.createElement('div');
-      separator.className = 'dropdown-separator';
-      separator.textContent = 'Custom Variants';
-      dropdown.appendChild(separator);
-
-      // Render custom variants
-      customVariants.forEach((variant) => renderOption(variant, true));
-    }
-
-    logger.info(`[Settings] Loaded ${variants.length + customVariants.length} variants for dropdown`);
+    logger.info(`[Settings] Populated variant dropdowns`);
   } catch (error) {
     console.error('[Settings] Failed to load variants for dropdown:', error);
     showToast('Failed to load prompt variants', 3000, 'error');
@@ -690,26 +647,14 @@ async function loadPreferences(): Promise<void> {
 
     // Update UI (only if elements exist)
     // Update UI (only if elements exist)
-    if (elements.defaultVariantSelect) {
-      elements.defaultVariantSelect.value = userPreferences.defaultVariant;
-
-      // Update trigger text and selected state
-      const selectedOption = elements.defaultVariantSelect.options[elements.defaultVariantSelect.selectedIndex];
-      if (selectedOption && elements.defaultVariantTriggerText) {
-        elements.defaultVariantTriggerText.textContent = selectedOption.textContent;
-      }
-
-      // Update dropdown selected state
-      const items = elements.defaultVariantDropdown?.querySelectorAll('.dropdown-item');
-      items?.forEach((item) => {
-        if ((item as HTMLElement).dataset.value === userPreferences.defaultVariant) {
-          item.classList.add('selected');
-          item.setAttribute('aria-selected', 'true');
-        } else {
-          item.classList.remove('selected');
-          item.setAttribute('aria-selected', 'false');
-        }
-      });
+    if (elements.defaultVariantTextSelect) {
+      elements.defaultVariantTextSelect.value = userPreferences.defaultVariantText;
+    }
+    if (elements.defaultVariantImageSelect) {
+      elements.defaultVariantImageSelect.value = userPreferences.defaultVariantImage;
+    }
+    if (elements.defaultVariantVideoSelect) {
+      elements.defaultVariantVideoSelect.value = userPreferences.defaultVariantVideo;
     }
     if (elements.includeTimestampsToggle) {
       elements.includeTimestampsToggle.checked = userPreferences.includeTimestamps;
@@ -740,7 +685,10 @@ async function savePreferences(): Promise<void> {
  */
 async function handlePreferenceChange(): Promise<void> {
   // Update preferences object
-  userPreferences.defaultVariant = elements.defaultVariantSelect.value;
+  // Update preferences object
+  userPreferences.defaultVariantText = elements.defaultVariantTextSelect.value;
+  userPreferences.defaultVariantImage = elements.defaultVariantImageSelect.value;
+  userPreferences.defaultVariantVideo = elements.defaultVariantVideoSelect.value;
   userPreferences.includeTimestamps = elements.includeTimestampsToggle.checked;
 
   // Save to storage

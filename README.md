@@ -1,30 +1,78 @@
 # CapSummarize — AI-powered Video Caption Summaries
 
-CapSummarize is a free, open-source browser extension that extracts video captions and helps you generate AI summaries using your favorite AI providers (ChatGPT, Claude, Gemini, and more).
+CapSummarize is a free, open-source browser extension that extracts video captions and helps you generate AI summaries, thumbnails, and short video clips using your favorite AI providers (ChatGPT, Claude, Gemini, Grok, and more).
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Available-blue?logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/lbhdfoediecbmfenldcegamiideipkig?utm_source=item-share-cb)
 
 ## ✨ Features
 
 - **Extract captions** from YouTube, Google Drive, Udemy, Zoom, and more
-- **Multiple summary styles** - Choose from 15 different formats (Default, Educational, Technical, Podcast, Kids-friendly, etc.)
+- **Multiple summary styles** - Choose from 15+ different formats (Default, Educational, Technical, Podcast, Kids-friendly, etc.)
+- **🎨 AI Image Generation** - Analyze transcript to create thumbnails, infographics, mind maps, and more
+- **🎬 AI Video Generation** - Analyze transcript to generate video clips (Gemini only)
 - **Use any AI provider** - ChatGPT, Claude, Gemini, Grok, Perplexity, Mistral, Meta AI, and more
 - **Custom variants** - Create your own summary templates
 - **History tracking** - Access previously captured transcripts
 - **Privacy-focused** - All processing happens locally, no data sent to external servers
 - **100% Free** - No subscriptions, no limits
 
+---
+
+## 📸 Examples Gallery
+
+See what CapSummarize can generate! All examples below were created from real YouTube videos.
+
+### 🎨 AI-Generated Thumbnails
+
+| Style                   | Without Reference                                            | With Reference                                                                 |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| **MrBeast Style**       | ![MrBeast](examples/images/generated-images/mr-beast.png)    | ![MrBeast with ref](examples/images/generated-images/mr-beast-with-ref.png)    |
+| **Casey Neistat Style** | ![Casey](examples/images/generated-images/casey-neistat.png) | ![Casey with ref](examples/images/generated-images/casey-neistat-with-ref.png) |
+| **Theo/Tech Style**     | ![Theo](examples/images/generated-images/theo.png)           | ![Theo with ref](examples/images/generated-images/theo-with-ref.png)           |
+| **5-Min Crafts Style**  | ![5-Min](examples/images/generated-images/5-min-crafts.png)  | ![5-Min with ref](examples/images/generated-images/5-min-crafts-with-ref.png)  |
+| **General Thumbnail**   | ![General](examples/images/generated-images/general.png)     | ![General with ref](examples/images/generated-images/general-with-ref.png)     |
+
+### 🖼️ Other Image Styles
+
+| Infographic                                                      | Mind Map                                                   | Comic Strip                                          |
+| ---------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
+| ![Infographic](examples/images/generated-images/infographic.png) | ![Mind Map](examples/images/generated-images/mind-map.png) | ![Comic](examples/images/generated-images/comic.png) |
+
+| Whiteboard                                                     | Quote Card                                                     | Scene                                                |
+| -------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
+| ![Whiteboard](examples/images/generated-images/whiteboard.png) | ![Quote Card](examples/images/generated-images/quote-card.png) | ![Scene](examples/images/generated-images/scene.png) |
+
+### 📝 Text Summary Examples
+
+| Style           | Description                              | Example                                   |
+| --------------- | ---------------------------------------- | ----------------------------------------- |
+| **Default**     | Balanced, comprehensive summary          | [View](examples/summaries/default.md)     |
+| **Educational** | Academic-focused with key concepts       | [View](examples/summaries/educational.md) |
+| **Technical**   | Code-focused with implementation details | [View](examples/summaries/technical.md)   |
+| **Casual**      | Friendly, conversational tone            | [View](examples/summaries/casual.md)      |
+| **Executive**   | Business-focused brief                   | [View](examples/summaries/executive.md)   |
+| **Blog**        | SEO-optimized blog post                  | [View](examples/summaries/blog.md)        |
+| **X/Twitter**   | Thread-ready format                      | [View](examples/summaries/twitter.md)     |
+| **Cheatsheet**  | Quick reference card                     | [View](examples/summaries/cheatsheet.md)  |
+| **Kids**        | Simple language for ages 7-12            | [View](examples/summaries/kids.md)        |
+
+[View all summary examples →](examples/summaries/)
+
+---
+
 ## 🚀 Quick Start
 
 ### Install from Source
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/samuxbuilds/capsummarize.git
    cd capsummarize/capsummarize-frontend
    ```
 
 2. **Install dependencies** (using [Bun](https://bun.sh) recommended)
+
    ```bash
    bun install
    # or
@@ -32,6 +80,7 @@ CapSummarize is a free, open-source browser extension that extracts video captio
    ```
 
 3. **Build the extension**
+
    ```bash
    bun run build
    # or
@@ -57,14 +106,14 @@ This watches for file changes and rebuilds automatically.
 
 ### Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development mode with watch |
-| `npm run build` | Build for production |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
-| `npm run type-check` | Run TypeScript type checking |
-| `npm run clean` | Remove build artifacts |
+| Command              | Description                       |
+| -------------------- | --------------------------------- |
+| `npm run dev`        | Start development mode with watch |
+| `npm run build`      | Build for production              |
+| `npm run lint`       | Run ESLint                        |
+| `npm run format`     | Format code with Prettier         |
+| `npm run type-check` | Run TypeScript type checking      |
+| `npm run clean`      | Remove build artifacts            |
 
 ## 📁 Project Structure
 
@@ -118,6 +167,34 @@ CapSummarize includes 15 built-in summary styles:
 
 You can also create custom variants in Settings.
 
+## 🎨 Image Generation Styles
+
+Generate AI images by analyzing your video transcript (requires ChatGPT, Gemini, or Grok):
+
+- **Thumbnail (General)** - Eye-catching YouTube thumbnails
+- **Thumbnail (MrBeast)** - Explosive, bright colors, high energy
+- **Thumbnail (Casey Neistat)** - Cinematic, documentary feel
+- **Thumbnail (Theo)** - Tech-focused, clean modern design
+- **Thumbnail (5-Min Crafts)** - DIY aesthetic, step-by-step
+- **Thumbnail (Linus Tech)** - Tech review, product-focused
+- **Infographic** - Visual data representation
+- **Comic Strip** - Comic-style visual story
+- **Mind Map** - Organic tree-style concept map
+- **Whiteboard** - Hand-drawn diagram aesthetic
+- **Quote Card** - Shareable quote with key insight
+- **Scene** - Key moment visualization
+
+## 🎬 Video Generation Styles
+
+Generate AI video clips by analyzing your transcript (Gemini only):
+
+- **Advertisement** - Short promotional ad clip
+- **Trailer** - Cinematic teaser trailer
+- **Quick Recap** - Fast-paced summary clip
+- **Explainer** - Educational explainer clip
+- **Cinematic** - Artistic cinematic sequence
+- **Social Media** - Viral social media clip
+
 ## 🔒 Privacy & Security
 
 - **No external servers** - Everything runs locally in your browser
@@ -157,7 +234,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with TypeScript, Tailwind CSS, and Bun
 - Icons from various AI providers
-
 
 ## 🌐 Connect
 

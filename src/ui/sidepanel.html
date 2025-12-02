@@ -92,13 +92,258 @@
         style="padding-bottom: 180px"
       >
         <!-- Ready State - Before Summary Generation -->
-        <div id="readyState" class="hidden fade-in">
-          <div class="card space-y-6 overflow-visible relative z-10">
+        <div id="readyState" class="hidden fade-in relative z-20">
+          <div class="card space-y-6 overflow-visible relative z-20">
             <div class="space-y-5 p-6 m-0 overflow-visible">
+              <!-- Output Type Toggle (Text / Image / Video) -->
+              <div class="space-y-3 pb-4 border-b border-border">
+                <label class="text-sm font-semibold text-foreground block fade-in delay-50"
+                  >Output type</label
+                >
+                <div
+                  class="flex rounded-lg bg-muted p-1 gap-1"
+                  role="radiogroup"
+                  aria-label="Output type selection"
+                >
+                  <button
+                    type="button"
+                    id="outputTypeText"
+                    class="output-type-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-1.5 active"
+                    role="radio"
+                    aria-checked="true"
+                    data-output-type="text"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      ></path>
+                    </svg>
+                    Text
+                  </button>
+                  <button
+                    type="button"
+                    id="outputTypeImage"
+                    class="output-type-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-1.5"
+                    role="radio"
+                    aria-checked="false"
+                    data-output-type="image"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      ></path>
+                    </svg>
+                    Image
+                  </button>
+                  <button
+                    type="button"
+                    id="outputTypeVideo"
+                    class="output-type-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-1.5"
+                    role="radio"
+                    aria-checked="false"
+                    data-output-type="video"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      ></path>
+                    </svg>
+                    Video
+                  </button>
+                </div>
+                <p id="outputTypeHint" class="text-xs text-muted-foreground mt-1 fade-in">
+                  Generate text summaries from video transcripts
+                </p>
+              </div>
+
+              <!-- Aspect Ratio Toggle (Wide / Vertical) - Only for Image mode -->
+              <div id="aspectRatioSection" class="space-y-3 pb-4 border-b border-border hidden">
+                <label class="text-sm font-semibold text-foreground block fade-in delay-75"
+                  >Aspect ratio</label
+                >
+                <div
+                  class="flex rounded-lg bg-muted p-1 gap-1"
+                  role="radiogroup"
+                  aria-label="Aspect ratio selection"
+                >
+                  <button
+                    type="button"
+                    id="aspectRatioWide"
+                    class="aspect-ratio-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-1.5 active"
+                    role="radio"
+                    aria-checked="true"
+                    data-aspect-ratio="wide"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <rect x="2" y="6" width="20" height="12" rx="2" stroke-width="2"></rect>
+                    </svg>
+                    Wide (16:9)
+                  </button>
+                  <button
+                    type="button"
+                    id="aspectRatioVertical"
+                    class="aspect-ratio-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-1.5"
+                    role="radio"
+                    aria-checked="false"
+                    data-aspect-ratio="vertical"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <rect x="6" y="2" width="12" height="20" rx="2" stroke-width="2"></rect>
+                    </svg>
+                    Vertical (9:16)
+                  </button>
+                </div>
+                <p id="aspectRatioHint" class="text-xs text-muted-foreground mt-1 fade-in">
+                  YouTube thumbnails (16:9) or Shorts/Reels (9:16)
+                </p>
+              </div>
+
+              <!-- Reference Image Input (Only for Image/Video mode) -->
+              <div id="referenceImageSection" class="space-y-3 pb-4 border-b border-border hidden">
+                <label class="text-sm font-semibold text-foreground block fade-in delay-75"
+                  >Reference Image</label
+                >
+
+                <!-- Upload Button State -->
+                <div id="imageUploadState" class="fade-in">
+                  <input type="file" id="referenceImageInput" accept="image/*" class="hidden" />
+                  <button
+                    type="button"
+                    id="uploadImageBtn"
+                    class="w-full px-4 py-3 text-sm bg-muted/50 border border-dashed border-border rounded-lg hover:bg-muted hover:border-primary/50 transition-all duration-200 flex flex-col items-center justify-center gap-2 group"
+                  >
+                    <svg
+                      class="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      ></path>
+                    </svg>
+                    <span class="text-muted-foreground group-hover:text-foreground font-medium"
+                      >Click to upload reference image</span
+                    >
+                  </button>
+                </div>
+
+                <!-- Image Preview State -->
+                <div id="imagePreviewState" class="hidden fade-in relative group">
+                  <div class="relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                    <img
+                      id="referenceImagePreview"
+                      src=""
+                      alt="Reference"
+                      class="w-full max-h-48 object-contain bg-black/20"
+                    />
+                    <div
+                      class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        id="copyImageBtn"
+                        class="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <svg
+                          class="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                          ></path>
+                        </svg>
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        id="removeImageBtn"
+                        class="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:bg-destructive/90 transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <svg
+                          class="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                    Image will be copied to clipboard when you open a provider
+                  </p>
+                </div>
+              </div>
+
               <!-- Summary Style Selector -->
               <div class="space-y-3 pb-4 border-b border-border relative z-50">
-                <label for="variantTrigger" class="text-sm font-semibold text-foreground block fade-in delay-100"
-                  >Choose summary style</label
+                <label
+                  for="variantTrigger"
+                  class="text-sm font-semibold text-foreground block fade-in delay-100"
+                  >Choose style</label
                 >
                 <div class="relative z-50">
                   <button
@@ -141,9 +386,60 @@
                 <select id="variantSelect" class="hidden"></select>
               </div>
 
+              <!-- Thumbnail Style Sub-Dropdown (only visible when Thumbnail is selected) -->
+              <div
+                id="thumbnailStyleSection"
+                class="space-y-3 pb-4 border-b border-border relative z-40 hidden"
+              >
+                <label
+                  for="thumbnailStyleTrigger"
+                  class="text-sm font-semibold text-foreground block fade-in delay-100"
+                  >Thumbnail style</label
+                >
+                <div class="relative z-40">
+                  <button
+                    type="button"
+                    id="thumbnailStyleTrigger"
+                    class="w-full px-4 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex items-center justify-between text-left group hover:border-primary/50 transition-colors fade-in"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                  >
+                    <div class="flex flex-col items-start overflow-hidden">
+                      <span id="thumbnailStyleTriggerText" class="block truncate font-medium"
+                        >Generic</span
+                      >
+                    </div>
+                    <svg
+                      id="thumbnailStyleChevron"
+                      class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-hover:text-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
+                    </svg>
+                  </button>
+
+                  <div
+                    id="thumbnailStyleDropdown"
+                    class="absolute z-30 mt-1 w-full dropdown-menu !rounded-lg max-h-[250px] overflow-y-auto focus:outline-none hidden origin-top scale-95 opacity-0 transition-all duration-100 p-1"
+                    role="listbox"
+                  >
+                    <!-- Thumbnail style items will be populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
               <div class="space-y-5 overflow-visible">
                 <div class="space-y-3 pt-3 overflow-visible">
-                  <div class="text-sm font-medium text-foreground text-center fade-in delay-300">Select provider</div>
+                  <div class="text-sm font-medium text-foreground text-center fade-in delay-300">
+                    Select provider
+                  </div>
                   <div
                     id="providerButtonsContainer"
                     class="flex flex-wrap gap-2 justify-center overflow-visible"
@@ -157,7 +453,7 @@
         </div>
 
         <!-- Recent Videos History Section -->
-        <div id="historySection" class="mt-6 hidden">
+        <div id="historySection" class="mt-6 hidden relative z-0">
           <div class="flex items-center justify-between mb-3 cursor-pointer" id="historyHeader">
             <div class="flex items-center gap-2">
               <svg
@@ -276,7 +572,6 @@
 
         <!-- Summary Content -->
 
-
         <!-- Error State -->
         <div id="errorState" class="hidden fade-in">
           <div class="error-card p-6 space-y-6">
@@ -348,7 +643,11 @@
               aria-label="GitHub"
             >
               <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+                <path
+                  fill-rule="evenodd"
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                  clip-rule="evenodd"
+                ></path>
               </svg>
             </a>
             <a
@@ -359,13 +658,14 @@
               aria-label="Twitter"
             >
               <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                ></path>
               </svg>
             </a>
           </div>
         </div>
       </footer>
-      </main>
     </div>
 
     <!-- External scripts -->

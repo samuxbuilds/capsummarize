@@ -10,7 +10,7 @@ const isDevelopment = (): boolean => {
   if (typeof process !== 'undefined' && process.env) {
     return process.env.NODE_ENV === 'development';
   }
-  
+
   // Fallback for safety - default to false (production) if we can't determine
   return false;
 };

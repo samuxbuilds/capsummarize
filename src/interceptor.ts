@@ -34,6 +34,7 @@ import { vttConnectorRegistry } from './utils/vtt-connectors';
 import { isThumbnailVTT } from './utils/vtt';
 import { sanitizeVTTContent } from './utils/security.js';
 import { logger } from './utils/logger';
+import { INTERCEPTOR_CONSTANTS } from './utils/constants';
 
 /**
  * Prevent double-injection of the interceptor script
@@ -46,7 +47,7 @@ if (!window.__vttInterceptorLoaded) {
    * This is used to prevent infinite recursion when the interceptor makes its own
    * fetch requests to retrieve VTT content.
    */
-  const SKIP_HEADER = 'x-vtt-interceptor-skip';
+  const SKIP_HEADER = INTERCEPTOR_CONSTANTS.SKIP_HEADER;
 
   /**
    * Enable/disable debug logging to console
@@ -137,7 +138,7 @@ if (!window.__vttInterceptorLoaded) {
     log('Posting VTT ->', url, 'bytes:', sanitizedContent.length);
     window.postMessage(
       {
-        type: 'VTT_INTERCEPTOR_FOUND',
+        type: INTERCEPTOR_CONSTANTS.VTT_FOUND_TYPE,
         url,
         content: sanitizedContent,
       },
@@ -373,7 +374,10 @@ if (!window.__vttInterceptorLoaded) {
         // Ignore header parsing errors
       }
       // eslint-disable-next-line prefer-rest-params
-      return originalSetRequestHeader.apply(this, arguments as unknown as Parameters<typeof originalSetRequestHeader>);
+      return originalSetRequestHeader.apply(
+        this,
+        arguments as unknown as Parameters<typeof originalSetRequestHeader>
+      );
     };
 
     /**

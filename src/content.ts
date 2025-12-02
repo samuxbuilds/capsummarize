@@ -30,6 +30,7 @@ import { initializeCaptionEnabler } from './utils/caption-enabler.js';
 import { injectFloatingIcon } from './floating-icon.js';
 import { logger } from './utils/logger';
 import { isThumbnailVTT } from './utils/vtt.js';
+import { MESSAGE_ACTIONS, INTERCEPTOR_CONSTANTS } from './utils/constants.js';
 
 /**
  * Injects the interceptor script into the page context
@@ -122,7 +123,7 @@ window.addEventListener('message', (event: MessageEvent) => {
   if (event.source !== window) return;
 
   // Process VTT interceptor messages
-  if (event.data.type === 'VTT_INTERCEPTOR_FOUND') {
+  if (event.data.type === INTERCEPTOR_CONSTANTS.VTT_FOUND_TYPE) {
     const { url, content } = event.data;
 
     // Additional filtering: Skip thumbnail VTT files at content script level
@@ -155,7 +156,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     // Forward valid VTT content to background script
     try {
       chrome.runtime.sendMessage({
-        action: 'vttFound',
+        action: MESSAGE_ACTIONS.VTT_FOUND,
         url,
         content,
         pageUrl: window.location.href,

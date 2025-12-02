@@ -23,6 +23,7 @@ import { logger } from './utils/logger.js';
 import { vttCacheManager } from './background/vttCacheManager.js';
 import { setupMessageListener } from './background/messageHandlers.js';
 import { sidePanelState } from './background/sidePanelManager.js';
+import { MESSAGE_ACTIONS, UI_CONSTANTS } from './utils/constants.js';
 
 /**
  * Handles extension action icon clicks to toggle the sidepanel.
@@ -42,7 +43,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       sidePanelState.set(windowId, false);
 
       // Send message to side panel to close itself
-      chrome.runtime.sendMessage({ action: 'closeSidePanel' }).catch(() => {
+      chrome.runtime.sendMessage({ action: MESSAGE_ACTIONS.CLOSE_SIDE_PANEL }).catch(() => {
         // Side panel might not be listening, that's okay
       });
 
@@ -77,8 +78,8 @@ chrome.tabs.onUpdated.addListener(
 
       // Update badge if VTT was loaded
       if (wasLoaded) {
-        chrome.action.setBadgeText({ text: '✓', tabId });
-        chrome.action.setBadgeBackgroundColor({ color: '#4CAF50', tabId });
+        chrome.action.setBadgeText({ text: UI_CONSTANTS.BADGE_TEXT_SUCCESS, tabId });
+        chrome.action.setBadgeBackgroundColor({ color: UI_CONSTANTS.BADGE_COLOR_SUCCESS, tabId });
       }
     }
   }
@@ -88,7 +89,7 @@ chrome.tabs.onUpdated.addListener(
  * Listen for side panel close notifications to update state
  */
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.action === 'sidePanelClosed') {
+  if (message.action === MESSAGE_ACTIONS.SIDE_PANEL_CLOSED) {
     // Reset state for all windows (we don't know which window closed)
     sidePanelState.clear();
     logger.log('[Background] 🔽 Side panel closed, state reset');
@@ -97,9 +98,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
         if (tab.id) {
-          chrome.tabs.sendMessage(tab.id, { action: 'sidePanelClosed' }).catch(() => {
-            // Tab might not have content script, ignore
-          });
+          chrome.tabs
+            .sendMessage(tab.id, { action: MESSAGE_ACTIONS.SIDE_PANEL_CLOSED })
+            .catch(() => {
+              // Tab might not have content script, ignore
+            });
         }
       });
     });
@@ -108,12 +111,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === 'closeSidePanel') {
+  if (message.action === MESSAGE_ACTIONS.CLOSE_SIDE_PANEL) {
     // Request to close side panel from floating icon
     logger.log('[Background] 🔽 Close side panel requested');
 
     // Send message to side panel to close itself
-    chrome.runtime.sendMessage({ action: 'closeSidePanel' }).catch(() => {
+    chrome.runtime.sendMessage({ action: MESSAGE_ACTIONS.CLOSE_SIDE_PANEL }).catch(() => {
       // Side panel might not be listening, that's okay
     });
 

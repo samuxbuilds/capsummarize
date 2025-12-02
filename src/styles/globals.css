@@ -101,7 +101,7 @@ body {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: hsl(var(--card-foreground));
   border-radius: var(--radius);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
@@ -803,6 +803,82 @@ code {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Output Type Toggle Buttons (Text/Image) */
+.output-type-btn {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: none;
+  cursor: pointer;
+}
+
+.output-type-btn:hover:not(.active) {
+  background: hsl(var(--background) / 0.5);
+  color: hsl(var(--foreground));
+}
+
+.output-type-btn.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground)); /* Ensure this is dark for contrast */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  font-weight: 600; /* Add weight for better readability */
+}
+
+.output-type-btn:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 2px;
+}
+
+/* Aspect Ratio Toggle Buttons (Wide/Vertical) */
+.aspect-ratio-btn {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: none;
+  cursor: pointer;
+}
+
+.aspect-ratio-btn:hover:not(.active) {
+  background: hsl(var(--background) / 0.5);
+  color: hsl(var(--foreground));
+}
+
+.aspect-ratio-btn.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.aspect-ratio-btn:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 2px;
+}
+
+
+
+.provider-icon-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Toggle switch */

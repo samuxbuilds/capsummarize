@@ -1,10 +1,10 @@
 /**
- * AI Prompt Templates for Video Summarization (Local Configuration)
+ * AI Prompt Templates for Video Summarization & Image Generation (Local Configuration)
  *
  * This module contains all prompt templates locally, eliminating the need for backend API calls.
  * The extension is now completely free with unlimited summaries.
  *
- * Available variants:
+ * TEXT SUMMARIZATION VARIANTS:
  * - Default: Balanced overview for general audiences (fallback)
  * - Executive: Concise decision-focused briefings for leaders
  * - Technical: Detailed analysis with code and implementation details
@@ -20,7 +20,50 @@
  * - Recap: 60-second interview-style summary recaps for rapid consumption
  * - Interview: Simplified Q&A format for interview and exam preparation
  * - X/Twitter: Viral threads with hooks and engagement optimization
+ *
+ * IMAGE GENERATION VARIANTS (Requires: ChatGPT, Gemini, or Grok):
+ * - Thumbnail: Eye-catching video thumbnail designs
+ * - Infographic: Visual data representation of key concepts
+ * - Comic: Comic-style visual story of the content
+ * - Mindmap: Visual mind map of topics and connections
+ * - Quote Card: Shareable quote cards with key insights
+ * - Scene: Key scene visualization from the video
  */
+
+import { IMAGE_CAPABLE_PROVIDERS, VIDEO_CAPABLE_PROVIDERS } from '../utils/constants.js';
+
+/**
+ * Output type for prompt templates
+ * - text: Generate text-based summaries (supported by all providers)
+ * - image: Analyze transcript and generate images (supported by ChatGPT, Gemini, Grok only)
+ * - video: Analyze transcript and generate video clips (supported by Gemini only)
+ */
+export type OutputType = 'text' | 'image' | 'video';
+
+/**
+ * Providers that support image generation
+ */
+export type ImageCapableProvider = (typeof IMAGE_CAPABLE_PROVIDERS)[number];
+
+/**
+ * Providers that support video generation
+ * (Gemini currently offers the only supported workflow for video prompts)
+ */
+export type VideoCapableProvider = (typeof VIDEO_CAPABLE_PROVIDERS)[number];
+
+/**
+ * Check if a provider supports image generation
+ */
+export function isImageCapableProvider(provider: string): provider is ImageCapableProvider {
+  return IMAGE_CAPABLE_PROVIDERS.includes(provider as ImageCapableProvider);
+}
+
+/**
+ * Check if a provider supports video generation
+ */
+export function isVideoCapableProvider(provider: string): provider is VideoCapableProvider {
+  return VIDEO_CAPABLE_PROVIDERS.includes(provider as VideoCapableProvider);
+}
 
 /**
  * Available prompt variants for different summarization styles and audiences
@@ -40,7 +83,54 @@ export type PromptVariant =
   | 'youtube'
   | 'cheatsheet'
   | 'recap'
-  | 'interview';
+  | 'interview'
+  // Image generation variants
+  | 'thumbnail'
+  | 'thumbnail-mrbeast'
+  | 'thumbnail-casey'
+  | 'thumbnail-theo'
+  | 'thumbnail-5min'
+  | 'thumbnail-tweet'
+  | 'infographic'
+  | 'comic'
+  | 'mindmap'
+  | 'whiteboard'
+  | 'quote-card'
+  | 'scene'
+  // Video generation variants (Gemini only)
+  | 'video-ad'
+  | 'video-trailer'
+  | 'video-recap'
+  | 'video-explainer'
+  | 'video-cinematic'
+  | 'video-social';
+
+/**
+ * Aspect ratio for image generation
+ */
+export type AspectRatio = 'wide' | 'vertical';
+
+/**
+ * Get aspect ratio dimensions text for prompts
+ */
+export function getAspectRatioText(ratio: AspectRatio): string {
+  return ratio === 'wide'
+    ? '16:9 landscape (YouTube thumbnail, 1920x1080 or 3840x2160)'
+    : '9:16 vertical (Shorts/Reels/TikTok, 1080x1920 or 2160x3840)';
+}
+
+/**
+ * Get pixel dimensions for aspect ratio
+ */
+export function getAspectRatioDimensions(
+  ratio: AspectRatio,
+  quality: 'standard' | '4k' = 'standard'
+): { width: number; height: number } {
+  if (ratio === 'wide') {
+    return quality === '4k' ? { width: 3840, height: 2160 } : { width: 1920, height: 1080 };
+  }
+  return quality === '4k' ? { width: 2160, height: 3840 } : { width: 1080, height: 1920 };
+}
 
 /**
  * Structure definition for prompt templates
@@ -50,6 +140,11 @@ export interface PromptTemplate {
   label: string;
   description: string;
   prompt: string;
+  /**
+   * Output type: 'text' for summaries, 'image' for visual content
+   * @default 'text'
+   */
+  outputType?: OutputType;
 }
 
 /**
@@ -1139,35 +1234,813 @@ Each tweet should:
 ### SOURCE TRANSCRIPT
 {transcript}`,
   },
+  // ============================================
+  // IMAGE GENERATION VARIANTS
+  // Requires: ChatGPT (DALL-E), Gemini (Imagen), or Grok
+  // ============================================
+  {
+    variant: 'thumbnail',
+    label: 'Thumbnail (General)',
+    description: 'High-energy, split background, illustrations if no photo',
+    outputType: 'image',
+    prompt: `Generate a viral YouTube thumbnail image based on the transcript below.
+
+⚠️ **CRITICAL - SUBJECT RULES:**
+- **IF REFERENCE IMAGE ATTACHED**: YOU MUST use that EXACT person's face. Apply a shocked/intense expression.
+- **IF NO REFERENCE IMAGE**: DO NOT generate a realistic human. Create a **High-Quality 3D Illustration** (Pixar/Fortnite style) or **Cartoon Persona** or **Robot Mascot** representing the topic.
+
+🎨 **GENERATE THIS IMAGE:**
+
+**Style & Vibe:**
+- **High Energy**: Chaotic, exciting, "YouTube Commentary" style.
+- **Background**: Split design (Red vs Blue, or Black vs Yellow). High contrast.
+- **Elements**: Big arrows, circles, floating emojis, "Vs" lightning bolts.
+
+**Subject (Person or Illustration):**
+- **Expression**: Hands on head (shocked), mouth open, pointing at something.
+- **Position**: Foreground, taking up 40% of the frame.
+
+**Text Overlay:**
+- **Content**: 2-4 words. "GONE MAD!", "WARNING", "IT'S OVER".
+- **Style**: Massive, white text with thick black outline and drop shadow.
+
+**DO NOT:**
+- Generate generic stock photo people (unless reference provided).
+- Use boring/flat colors.
+- Make text small.
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'thumbnail-mrbeast',
+    label: 'Thumbnail (MrBeast Style)',
+    description: 'Explosive, bright colors, huge text, high energy',
+    outputType: 'image',
+    prompt: `Generate a high-energy MrBeast-style viral YouTube thumbnail image.
+
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, YOU MUST use that EXACT person's face and likeness.
+- **FACE SWAP PRIORITY**: The attached face is the MOST IMPORTANT element. Do not change the person's identity.
+- **EXPRESSION MODIFICATION**: Keep the person's identity but morph their expression into a MrBeast-style SHOCK/EXCITEMENT (mouth wide open, eyes huge).
+- **SKIN TEXTURE**: Apply a "glossy", high-quality YouTuber skin retouching filter. Smooth but detailed.
+- If NO reference image: create a generic fictional person with diverse appearance, but maintain the style.
+
+🔥 **GENERATE THIS EXACT IMAGE:**
+
+**The Face (Center of Attention):**
+- **Expression**: EXTREME shock, joy, or disbelief. Mouth OPEN showing teeth. Eyes WIDE.
+- **Position**: Large in the frame (30-50%), usually on the left or right third.
+- **Lighting**: High-key studio lighting. Bright, even illumination on the face.
+- **Rim Light**: Strong CYAN or MAGENTA rim light separating the subject from the background.
+- **Detail**: Hyper-realistic, 8k resolution, sharp focus on the eyes.
+
+**The "MrBeast" Look:**
+- **Saturation**: 110%. Colors should be VIBRANT and POP. No dull or muted tones.
+- **Contrast**: High contrast. Deep blacks (if any) and bright highlights.
+- **Depth**: Strong separation between foreground (person) and background. 3D "pop-out" effect.
+- **Lens**: Wide-angle (16mm-24mm) distortion to make the hand/face feel closer to the viewer.
+
+**Background & Context:**
+- **Scenario**: An epic, larger-than-life challenge or situation based on the transcript.
+- **Elements**: Piles of money, expensive cars, private islands, massive structures, or "Versus" setups.
+- **Blur**: Slight Gaussian blur on the background to keep focus on the subject.
+
+**Text (If needed):**
+- **Style**: Massive, sans-serif font (like "ObelixPro" or "Komika Axis").
+- **Effect**: Thick black stroke/outline. White or bright yellow fill. Heavy drop shadow.
+- **Content**: Short, punchy (1-3 words). "$1 vs $1,000,000", "I SURVIVED", "IMPOSSIBLE".
+
+**DO NOT GENERATE:**
+- The real MrBeast (Jimmy Donaldson) unless specifically requested or if he's the reference.
+- Low resolution, blurry, or "painting" style images. Must look like a PHOTOGRAPH.
+- Muted, pastel, or desaturated colors.
+- Small, hard-to-read text.
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'thumbnail-casey',
+    label: 'Thumbnail (Casey Neistat Style)',
+    description: 'Vlog style, sunglasses, NYC grit, high contrast',
+    outputType: 'image',
+    prompt: `Generate a "Casey Neistat" style vlog thumbnail.
+
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, YOU MUST use that EXACT person's face.
+- **FACE SWAP PRIORITY**: The attached face is the MOST IMPORTANT element.
+- **ACCESSORIES**: If the person is NOT wearing sunglasses, TRY to add "Ray-Ban Wayfarer" style sunglasses if it fits the vibe (optional but preferred for this style).
+- **EXPRESSION**: Intense, serious, or "mid-sentence" speaking. Authentic, not posed.
+- If NO reference image: create a generic person with messy hair and sunglasses.
+
+🎬 **GENERATE THIS EXACT IMAGE:**
+
+**The Vibe (NYC Vlog):**
+- **Camera Angle**: Hand-held "selfie" style (wide angle, arm visible sometimes).
+- **Lighting**: Natural, harsh sunlight or gritty city night lights. High contrast.
+- **Texture**: Sharp, slightly grainy, "shot on Canon DSLR" look.
+- **Background**: NYC streets, busy intersections, subway, or messy studio with gear.
+
+**The Look:**
+- **Sunglasses**: Black Wayfarer-style sunglasses are a SIGNATURE element.
+- **Hair**: Messy, windblown, "just woke up" or "been working all day" hair.
+- **Clothing**: Casual, t-shirt, hoodie, maybe a suit jacket over a t-shirt.
+
+**Text Style:**
+- **Font**: Hand-drawn marker style OR simple bold white sans-serif.
+- **Background**: Text often on black rectangular strips (label maker style).
+- **Content**: ANALYZE TRANSCRIPT. Extract a 3-5 word provocative phrase that summarizes the core conflict. Examples: "THE TRUTH ABOUT [TOPIC]", "WHY I QUIT", "NYC IS OVER".
+
+**DO NOT GENERATE:**
+- The real Casey Neistat (unless requested).
+- Polished "beauty guru" lighting.
+- Perfect hair or makeup.
+- 3D rendered text or "gaming" effects.
+- Oversaturated "MrBeast" colors.
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'thumbnail-theo',
+    label: 'Thumbnail (Theo Style)',
+    description: 'Dark mode, tech logos, "hot takes", skeptical face',
+    outputType: 'image',
+    prompt: `Generate a "Theo - t3.gg" style YouTube thumbnail.
+    
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, YOU MUST use that EXACT person's face.
+- **FACE SWAP PRIORITY**: The attached face is the MOST IMPORTANT element.
+- **EXPRESSION**: Skeptical, "really?", slight smirk, or intense stare. NOT exaggerated like MrBeast.
+- **FRAMING**: Person on the LEFT or RIGHT third, looking towards the center/text.
+- If NO reference image: create a generic young tech developer (hoodie/t-shirt).
+
+💻 **GENERATE THIS EXACT IMAGE:**
+
+**The Vibe (Dark Mode Tech):**
+- **Background**: DARK GREY or BLACK (#0d1117). Minimalist.
+- **Lighting**: Moody, side-lit. Not overly bright.
+- **Contrast**: High contrast between the dark background and the bright logos/text.
+
+**Key Elements (The "Hot Take"):**
+- **Tech Logos**: 2-4 recognizable logos (React, Next.js, Rust, Go, JS, etc.) relevant to the transcript.
+- **The "Tier List" / "Vs" Layout**: Logos arranged to show comparison or ranking.
+- **Text Labels**: Short, punchy judgments next to logos.
+  - "Good." (Green text)
+  - "Bad." (Red text)
+  - "Mid." (White text)
+  - "Goated." (Gold/Yellow text)
+  - "Trash." (Red text)
+- **Font**: Clean, bold sans-serif (Inter, Roboto). White text on dark background.
+
+**Composition:**
+- **Subject**: Occupies 30-40% of the frame.
+- **Content**: Occupies 60-70% of the frame (logos, code snippets, text).
+- **Code Snippets**: Optional faint code blocks in the background (syntax highlighted).
+
+**DO NOT GENERATE:**
+- The real Theo (unless requested).
+- Bright, happy, colorful backgrounds.
+- "MrBeast" style open mouth faces.
+- Generic "hacker" imagery (matrix rain, hoods up).
+- Cluttered designs. Keep it clean and "dark mode".
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'thumbnail-5min',
+    label: 'Thumbnail (5-Min Crafts Style)',
+    description: 'Split-screen, bright colors, "life hack" arrows & emojis',
+    outputType: 'image',
+    prompt: `Generate a "5-Minute Crafts" style DIY/Life Hack thumbnail.
+
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, use that person's hands or likeness demonstrating the craft.
+- **HANDS PRIORITY**: If the image shows hands/objects, preserve the action but brighten the lighting.
+- If NO reference image: show generic hands performing a "hack".
+
+✂️ **GENERATE THIS EXACT IMAGE:**
+
+**The Layout (Split Screen):**
+- **Structure**: CLASSIC SPLIT SCREEN. Left side = "Before" (Problem), Right side = "After" (Solution).
+- **Divider**: Distinct white or bright yellow line separating the two sides.
+- **Arrows**: BIG RED ARROW pointing from the problem to the solution or the key tool.
+
+**The Aesthetic (Candy Colored):**
+- **Colors**: EXTREMELY BRIGHT, saturated pastels. Pink, Cyan, Yellow, Lime Green.
+- **Lighting**: Flat, bright, shadowless "medical" or "studio" lighting. Everything is fully illuminated.
+- **Background**: Solid bright colors (Pink/Blue) or clean white surfaces.
+
+**Key Elements:**
+- **Hands**: Manicured hands holding objects clearly.
+- **Emojis**: 😱 (Shocked face), ✨ (Sparkles), ✅ (Checkmark), ❌ (Red X).
+- **Objects**: Household items (toothpaste, eggs, glue gun, plastic bottles) looking "magical".
+
+**Text Style:**
+- **Font**: Bubble letters or bold sans-serif in bright colors.
+- **Content**: "WOW!", "HACK", "SMART", "DIY".
+- **Banners**: Text inside a jagged "burst" shape or rounded rectangle.
+
+**DO NOT GENERATE:**
+- Dark, moody, or cinematic lighting.
+- Realistic/gritty textures.
+- Complex backgrounds.
+- Subtle expressions.
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'thumbnail-tweet',
+    label: 'Thumbnail (Tweet Style)',
+    description: 'Viral tweet overlay, realistic username, millions of views',
+    outputType: 'image',
+    prompt: `Generate a viral "Tweet Style" YouTube thumbnail.
+
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, YOU MUST use that EXACT person's face.
+- **EXPRESSION**: Match the tweet's vibe (Thinking, Shocked, or Smug).
+- If NO reference image: create a generic tech/business person or relevant figure.
+
+🐦 **GENERATE THIS EXACT IMAGE:**
+
+**Layout:**
+- **Split Screen or Overlay**: Person on one side (or background), LARGE Tweet overlay on the other.
+- **The Tweet**: Must look like a REAL dark mode Twitter/X post.
+
+**Tweet Content (THE MOST IMPORTANT PART):**
+- **Username/Name**: **DO NOT USE HARDCODED NAMES.** ANALYZE the transcript topic to pick the most relevant entity.
+  - *Windows/PC?* -> Use "Microsoft @Microsoft" or "Satya Nadella @satyanadella"
+  - *Apple/iPhone?* -> Use "Apple @Apple" or "Tim Cook @tim_cook"
+  - *Coding/Web?* -> Use "Vercel @vercel" or "Guillermo Rauch @rauchg"
+  - *General Tech?* -> Use "MKBHD @MKBHD" or "The Verge @verge"
+- **Text**: EXTRACT a short, controversial "hot take" from the transcript.
+  - **LENGTH RULE**: MAX 1-2 sentences. Short and punchy.
+  - **Style**: Clickbait but believable.
+- **Stats**: MUST show viral numbers. "2.4M Views", "15K Reposts", "85K Likes".
+- **Date**: USE TODAY'S DATE (e.g., "Nov 25, 2025" or current date).
+
+**Visual Style (EXACT UI REPLICATION):**
+- **Font**: MUST use **Chirp**, **San Francisco**, or **Roboto**. NO generic serifs.
+- **Background**: Dark mode (black/dark gray).
+- **UI CHECKLIST (MUST INCLUDE):**
+  - **Header**: Profile Pic (Circle) + Name (Bold) + Verified Badge (Blue/Gold) + Handle (@...) + **X Logo** (Top Right).
+  - **Footer**: 4 Icons with numbers: 💬 (Reply), 🔁 (Repost), ❤️ (Like), 🔖 (Bookmark/Share).
+  - **Stats Line**: "2.4M Views • Nov 25, 2025" (Separated by a dot).
+- **Layout**: The Tweet should look like a floating "Card" or a direct screenshot overlay.
+
+**DO NOT GENERATE:**
+- Generic "Lorem Ipsum" text.
+- Blurry text.
+- Fake-looking "cartoon" tweets.
+- Missing UI elements (like the X logo or footer icons).
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'infographic',
+    label: 'Infographic',
+    description: 'Visual data representation of key concepts (Image)',
+    outputType: 'image',
+    prompt: `Generate a clean modern infographic image based on the transcript.
+
+📊 **GENERATE THIS INFOGRAPHIC:**
+
+**Layout & Structure:**
+- Bold title at top grabbing attention
+- 4-6 key points extracted and visualized
+- Numbered sections for processes/steps
+- Arrows or lines showing concept relationships
+- Summary or key takeaway section
+- Generous whitespace (at least 20%)
+
+**Visual Hierarchy:**
+- Most important info = largest/boldest
+- Clear progression: title > headers > body
+- Reading flow: left-to-right, top-to-bottom
+- Scannable in under 30 seconds
+
+**Style:**
+- 3-4 harmonious colors plus white/light gray background
+- Consistent icon style (ALL flat OR ALL line-art - don't mix)
+- Clean sans-serif typography
+- Simple data viz: charts, progress bars, icon arrays, number callouts
+
+**Content to Extract:**
+- 4-6 main concepts, statistics, or steps
+- Any numbers or percentages to visualize
+- How concepts relate to each other
+- 1-2 main insights to highlight prominently
+
+**DO NOT:**
+- Clutter the design with too many elements
+- Mix different icon styles
+- Use more than 5 colors
+- Make text too small to read
+- Add watermarks or logos
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'comic',
+    label: 'Comic Strip',
+    description: 'Comic-style visual story of the content (Image)',
+    outputType: 'image',
+    prompt: `Generate a fun engaging comic strip image based on the transcript.
+
+📚 **GENERATE THIS COMIC:**
+
+**Panels:**
+- 3-6 clear panels telling the story visually
+- Clear panel borders, easy to follow
+- Mixed panel sizes - larger for important moments
+- Left-to-right, top-to-bottom reading flow
+
+**Characters:**
+- Expressive cartoon characters with personality
+- Exaggerated expressions and poses
+- Consistent design across all panels
+- Use characters to represent ideas or people
+
+**Visual Elements:**
+- Speech bubbles for key quotes
+- Thought bubbles for inner thoughts
+- Sound effects (POW, BOOM, etc.)
+- Action lines and impact stars
+- Speed lines for movement
+
+**Style:**
+- Bold vibrant colors that pop
+- Fun and engaging, not boring
+- Humor where it fits naturally
+- Build to an "aha!" moment or punchline
+
+**Storytelling:**
+- Grab the main story/key points from transcript
+- Make abstract concepts relatable
+- Each panel has energy and purpose
+
+**DO NOT:**
+- Use boring static poses
+- Make unclear panel flow
+- Use dull muted colors
+- Add too many words
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'mindmap',
+    label: 'Mind Map',
+    description: 'Organic tree-style mind map spreading from center',
+    outputType: 'image',
+    prompt: `Generate a beautiful professional mind map image based on the transcript.
+
+🧠 **GENERATE THIS MIND MAP:**
+
+**Center Node:**
+- Circular badge in exact center
+- Light beige/cream color with thin border
+- Main topic title (2-4 words MAX)
+- Small brain or lightbulb icon above text
+
+**Main Branches (5-7):**
+- THICK solid curved shapes like colorful ribbons
+- NOT thin lines - these are SOLID FILLED SHAPES
+- Radiate outward from center like tree limbs
+- Each branch a different vibrant color
+- Taper as they extend outward
+- Short 2-4 word labels on each
+
+**Branch Colors:**
+- Forest green, lime green, teal, sky blue
+- Orange, coral, purple, magenta
+- Each main branch different color
+
+**Sub-Branches:**
+- 2-4 per main branch
+- Smaller curved branches
+- Same hue as parent but lighter shade
+- 1-3 word labels with optional icons
+
+**Layout:**
+- Balanced and symmetrical
+- Don't cluster branches on one side
+- Pure white or light gray background
+- Soft subtle shadows for depth
+- Like MindMeister, XMind, or Miro quality
+
+**DO NOT:**
+- Use thin straight lines (branches must be THICK RIBBONS)
+- Create cluttered unbalanced layout
+- Make text too small to read
+- Use dark background
+- Add 3D effects or gradients on branches
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'whiteboard',
+    label: 'Whiteboard',
+    description: 'Hand-drawn whiteboard diagram with sketches and arrows',
+    outputType: 'image',
+    prompt: `Generate a realistic whiteboard diagram image based on the transcript.
+
+✏️ **GENERATE THIS WHITEBOARD:**
+
+**The Look:**
+- Clean white/off-white whiteboard background with subtle texture
+- Hand-drawn sketches with colorful markers
+- Handwriting-style text (looks marker-written)
+- Casual, slightly messy, authentic hand-made quality
+
+**Layout:**
+- Central title at top in box
+- 3-5 main sections spread across whiteboard
+- Arrows connecting related concepts
+- Key takeaway at bottom
+
+**Each Section:**
+- Header in hand-drawn box
+- 2-4 bullet points (hand-drawn dots)
+- Small sketch icon
+- Underlines and circles around key words
+
+**Marker Colors:**
+- Black: main text, outlines
+- Blue: headers, important terms
+- Red: highlights, warnings, key points
+- Green: positive points, checkmarks
+- Orange/Yellow: accents, stars, emphasis
+
+**Sketch Elements:**
+- Simple stick figures, objects
+- Hand-drawn boxes and frames
+- Curved arrows between concepts
+- Lightbulbs, checkmarks, X marks, stars
+- Simple charts/graphs
+
+**The Feel:**
+- Looks like someone sketched it during a meeting
+- Organized but casual
+- Educational and easy to scan
+- Hand-drawn imperfection IS the aesthetic
+
+**DO NOT:**
+- Make it look digital or polished
+- Use perfect straight lines
+- Use typed fonts
+- Make it too cluttered
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'quote-card',
+    label: 'Quote Card',
+    description: 'Shareable quote card with key insight (Image)',
+    outputType: 'image',
+    prompt: `Generate a shareable social media quote card image based on the transcript.
+
+💬 **GENERATE THIS QUOTE CARD:**
+
+**Format:**
+- Square format (1:1) optimized for Instagram/Twitter
+- Beautiful background that doesn't distract
+
+**The Quote:**
+- Most powerful, memorable line from transcript
+- Something that makes people think or feel
+- Under 30 words - punchy and impactful
+- Works standalone without context
+- Large prominent text, centered
+
+**Visual Elements:**
+- Large decorative quotation marks
+- Clean readable typography
+- High contrast for readability
+- Subtle attribution at bottom (optional)
+- Small accent icon or illustration (optional)
+
+**Background Options:**
+- Gradient with bold text
+- Photo with dark overlay for contrast
+- Minimal solid color with accent
+- Abstract pattern that doesn't distract
+
+**The Goal:**
+- Something people would actually repost
+- High contrast readable on any device
+- Professional but shareable
+- Clean and uncluttered - quote is the star
+
+**DO NOT:**
+- Clutter with too many elements
+- Use low contrast hard-to-read text
+- Make the text too small
+- Add watermarks or logos
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'scene',
+    label: 'Scene Visualization',
+    description: 'Key scene or concept visualization (Image)',
+    outputType: 'image',
+    prompt: `Generate a cinematic scene visualization image based on the transcript.
+
+⚠️ **CRITICAL - REFERENCE IMAGE RULES:**
+- If a reference image is attached, incorporate that person/element as key part of the scene
+- Match their likeness and features precisely
+- If NO reference image: create the scene with appropriate generic elements
+
+🎬 **GENERATE THIS SCENE:**
+
+**The Moment:**
+- Capture the MOST impactful moment from the content
+- Tell the story in a single powerful frame
+- Emotionally resonant - viewers should feel something
+- Avoid clichés and generic stock photo compositions
+
+**Composition:**
+- Strong focal point using rule of thirds
+- Clear foreground, midground, background layers
+- Negative space for impact
+- Professional cinematography feel
+
+**Lighting:**
+- Dramatic lighting that sets the mood
+- Options: golden hour, blue hour, dramatic shadows, bright and airy
+- NOT flat lighting
+- Beautiful color grading
+
+**Style Adaptation (based on content):**
+- Real world topics → photorealistic, natural lighting
+- Abstract ideas → stylized artistic illustration
+- Tech content → futuristic, neon accents, clean lines
+- Human stories → warm, emotional, intimate
+- Business topics → professional, modern, clean
+- Nature topics → epic landscapes, golden hour
+
+**Atmosphere:**
+- Match the emotional tone of the content
+- 2-3 visual details that communicate the message without text
+- Cinematic color grade (not oversaturated)
+- Could be a movie still
+
+**DO NOT:**
+- Create flat boring compositions
+- Use poor or flat lighting
+- Make cluttered distracting images
+- Create generic stock photo feel
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  // ============================================
+  // VIDEO GENERATION VARIANTS
+  // Requires: Gemini only
+  // ============================================
+  {
+    variant: 'video-ad',
+    label: 'Video (Advertisement)',
+    description: 'Short promotional ad clip based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create a short promotional video ad.
+
+🎬 **THE AD:**
+
+**Hook:**
+- Start with something that grabs attention immediately
+- Bold text or motion graphics
+- Make the value clear right away
+
+**Core:**
+- Show the main benefit from the transcript
+- Dynamic movement and transitions
+- Keep it polished and professional
+- Hit the key selling points visually
+
+**Close:**
+- Clear call to action
+- Professional finish
+- End on a memorable frame
+
+**Style:**
+- Fast-paced, high energy
+- Modern motion graphics
+- Bold text animations
+- Professional color grading
+
+⚠️ No logos or creator branding—focus on the content.
+
+**Analyze the transcript and create the ad:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'video-trailer',
+    label: 'Video (Trailer)',
+    description: 'Cinematic teaser trailer based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create a cinematic trailer that builds anticipation.
+
+🎬 **THE TRAILER:**
+
+**Opening:**
+- Dramatic establishing shot
+- Moody, atmospheric lighting
+- Build tension or curiosity
+
+**Build-up:**
+- Quick cuts of the highlights from the transcript
+- Escalating energy
+- Tease the best parts
+- Sound design that hits
+
+**Climax:**
+- Most impactful moment from the content
+- Title or key message
+- Leave them wanting more
+
+**Style:**
+- Cinematic widescreen look
+- Epic lighting and shadows
+- Film grain or cinematic color grade
+- Dramatic pacing
+
+**Analyze the transcript and create the trailer:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'video-recap',
+    label: 'Video (Quick Recap)',
+    description: 'Fast-paced summary clip based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create a fast-paced recap video.
+
+🎬 **THE RECAP:**
+
+**Structure:**
+- Extract 3-4 main points from the transcript
+- Show each point with text on screen
+- Keep it punchy and digestible
+
+**Visual Style:**
+- Quick, snappy transitions
+- Bold, readable text
+- Visuals that match each point
+- Consistent look throughout
+
+**Pacing:**
+- Fast but you can still follow
+- Every frame counts
+- Each shot has a purpose
+- Keep the rhythm going
+
+**Elements:**
+- Highlight key stats or facts from the transcript
+- Icons or graphics for clarity
+- Optional progress indicator
+- Satisfying ending
+
+**Analyze the transcript and create the recap:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'video-explainer',
+    label: 'Video (Explainer)',
+    description: 'Educational explainer clip based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create an educational explainer video.
+
+🎬 **THE EXPLAINER:**
+
+**Intro:**
+- Show the main topic from the transcript
+- Hook that sets the context
+- Clean, professional look
+
+**Explanation:**
+- Step-by-step visual walkthrough of the key concepts
+- Diagrams or animations that clarify
+- Labels for important terms from the transcript
+- Reveal info progressively
+
+**Wrap-up:**
+- Reinforce the main takeaway
+- Visual summary
+- Clean ending
+
+**Style:**
+- Minimal and clean
+- Smooth animations
+- Educational but engaging
+- Whiteboard or infographic feel
+
+**Analyze the transcript and create the explainer:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'video-cinematic',
+    label: 'Video (Cinematic)',
+    description: 'Artistic cinematic sequence based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create a stunning cinematic video sequence.
+
+🎬 **THE CINEMATIC:**
+
+**Visual Poetry:**
+- Aesthetics over information
+- Evoke emotion through imagery inspired by the transcript
+- Every frame could be a still
+
+**Cinematography:**
+- Smooth camera movements—dolly, crane, slow pan
+- Beautiful depth of field
+- Golden hour or atmospheric lighting
+- Film-like color grading
+
+**Mood:**
+- Match the emotional tone of the transcript content
+- Music video or film quality
+- Let moments breathe
+- Artistic transitions
+
+**Elements:**
+- Nature, architecture, or human moments related to the topic
+- Symbolic imagery that ties to the content
+- No text—pure visual
+- Cinematic feel
+
+**Analyze the transcript and create the cinematic video:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
+  {
+    variant: 'video-social',
+    label: 'Video (Social Media)',
+    description: 'Viral social media clip based on transcript',
+    outputType: 'video',
+    prompt: `Analyze the transcript below and create a viral social media video clip.
+
+🎬 **THE SOCIAL VIDEO:**
+
+**Aspect Ratio Guidance:**
+- For 16:9 (wide): Optimize for YouTube, Twitter, LinkedIn feeds
+- For 9:16 (vertical): Optimize for TikTok, Instagram Reels, YouTube Shorts
+- Adapt all compositions and text placements to work perfectly for the specified aspect ratio
+
+**Instant Hook (First 1-2 seconds):**
+- Pattern interrupt right away
+- Something unexpected from the content
+- Make them stop scrolling
+- Text hook visible immediately
+
+**Content (Main Body):**
+- Extract the most shareable moment from the transcript
+- Adapt layout to aspect ratio (vertical = stacked, wide = side-by-side)
+- Big, bold text optimized for mobile viewing
+- High energy, quick cuts (0.5-2 second clips)
+- Captions/subtitles always on screen
+
+**Ending (Last 2-3 seconds):**
+- Satisfying conclusion or cliffhanger
+- Loop-friendly if possible
+- Something worth sharing
+- Clear CTA or memorable final frame
+
+**Platform Style:**
+- TikTok/Reels/Shorts aesthetic for vertical
+- YouTube/Twitter style for wide
+- Trendy effects and transitions
+- Meme-aware styling when appropriate
+- Sound design and music sync matters
+
+**Visual Elements:**
+- Large readable captions/subtitles (essential for muted autoplay)
+- Emoji or reaction elements
+- Trending visual styles (zooms, shake effects, highlights)
+- Mobile-first design always
+- Safe zones for UI elements (top/bottom margins)
+
+**Analyze the transcript and create the social clip:**
+
+### TRANSCRIPT
+{transcript}`,
+  },
 ];
-
-/**
- * Get all prompt templates as an array
- */
-export function getAllPromptTemplates(): PromptTemplate[] {
-  return promptTemplates;
-}
-
-/**
- * Get a specific prompt template by variant
- */
-export function getPromptTemplate(variant: string): PromptTemplate | undefined {
-  return promptTemplates.find((p) => p.variant === variant);
-}
-
-/**
- * Get prompt templates formatted for UI display
- */
-export function getPromptVariantsForUI(): Array<{
-  variant: string;
-  label: string;
-  description: string;
-  prompt: string;
-}> {
-  return promptTemplates.map((template) => ({
-    variant: template.variant,
-    label: template.label,
-    description: template.description,
-    prompt: template.prompt,
-  }));
-}
