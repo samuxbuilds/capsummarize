@@ -177,25 +177,48 @@
                     </select>
                   </div>
 
-                  <!-- Thumbnail Style (Only for Image Output) -->
-                  <div id="thumbnailStyleContainer" class="space-y-2 hidden">
-                    <label
-                      for="variantThumbnailStyle"
-                      class="text-sm font-medium text-foreground block"
-                    >
-                      Thumbnail Style
-                      <span class="text-muted-foreground text-xs font-normal">(Optional)</span>
-                    </label>
-                    <select
-                      id="variantThumbnailStyle"
-                      class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    >
-                      <option value="">None (Standard Image)</option>
-                      <!-- Will be populated dynamically -->
-                    </select>
-                    <p class="text-xs text-muted-foreground">
-                      Select a base style if creating a custom thumbnail variant
-                    </p>
+                  <!-- Image Style Options (Only for Image Output) -->
+                  <div id="imageStyleContainer" class="space-y-4 hidden">
+                    <!-- Image Style Text Input -->
+                    <div class="space-y-2">
+                      <label
+                        for="variantImageStyle"
+                        class="text-sm font-medium text-foreground block"
+                      >
+                        Image Style
+                        <span class="text-muted-foreground text-xs font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="variantImageStyle"
+                        placeholder="e.g., minimalist, vibrant, professional, hand-drawn"
+                        class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      />
+                      <p class="text-xs text-muted-foreground">
+                        Describe the visual style for generated images (e.g., "cinematic",
+                        "cartoon", "watercolor")
+                      </p>
+                    </div>
+
+                    <!-- Is Thumbnail Checkbox -->
+                    <div class="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="variantIsThumbnail"
+                        class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/50"
+                      />
+                      <div>
+                        <label
+                          for="variantIsThumbnail"
+                          class="text-sm font-medium text-foreground cursor-pointer"
+                        >
+                          Mark as Thumbnail Style
+                        </label>
+                        <p class="text-xs text-muted-foreground mt-0.5">
+                          Enable this if this style is specifically for YouTube thumbnail generation
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Description -->
@@ -291,7 +314,65 @@
 
             <!-- Custom Variants List -->
             <div class="space-y-3">
-              <h2 class="text-sm font-semibold">Your Custom Prompt Styles</h2>
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold">Your Custom Prompt Styles</h2>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    id="importVariantsBtn"
+                    class="btn-secondary text-xs px-3 py-1.5"
+                    title="Import custom styles from a JSON file"
+                    aria-label="Import custom styles"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5 mr-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      ></path>
+                    </svg>
+                    Import
+                  </button>
+                  <button
+                    type="button"
+                    id="exportVariantsBtn"
+                    class="btn-secondary text-xs px-3 py-1.5"
+                    title="Export custom styles to a JSON file"
+                    aria-label="Export custom styles"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5 mr-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      ></path>
+                    </svg>
+                    Export
+                  </button>
+                  <!-- Hidden file input for import -->
+                  <input
+                    type="file"
+                    id="importFileInput"
+                    accept=".json"
+                    class="hidden"
+                    aria-hidden="true"
+                  />
+                </div>
+              </div>
               <div id="customVariantsList" class="space-y-3">
                 <!-- Will be populated dynamically -->
                 <div id="emptyState" class="card p-8 text-center">
@@ -316,6 +397,63 @@
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <!-- Import File Format Info -->
+              <div class="card p-0 overflow-hidden">
+                <details class="group">
+                  <summary
+                    class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                  >
+                    <span class="text-sm font-medium text-foreground">View import file format</span>
+                    <svg 
+                      class="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </summary>
+                  <div class="p-4 pt-0 border-t border-border/50">
+                    <p class="text-xs text-muted-foreground mb-3 mt-3">
+                      Import files should be JSON with this structure:
+                    </p>
+                    <pre
+                      class="text-[10px] bg-background/50 p-3 rounded border border-border overflow-x-auto font-mono"
+                    ><code>{
+  "version": 1,
+  "variants": [
+    {
+      "variant": "my-style-id",
+      "description": "A brief description",
+      "prompt": "Your prompt with {transcript}",
+      "outputType": "text",
+      "imageStyle": "optional style",
+      "isThumbnail": false
+    }
+  ]
+}</code></pre>
+                    <div class="mt-4 space-y-2">
+                      <p class="text-[10px] text-muted-foreground flex items-start gap-2">
+                        <span class="text-primary font-medium min-w-[70px]">variant:</span> 
+                        <span>Unique ID (lowercase, numbers, hyphens)</span>
+                      </p>
+                      <p class="text-[10px] text-muted-foreground flex items-start gap-2">
+                        <span class="text-primary font-medium min-w-[70px]">outputType:</span> 
+                        <span>"text", "image", or "video"</span>
+                      </p>
+                      <p class="text-[10px] text-muted-foreground flex items-start gap-2">
+                        <span class="text-primary font-medium min-w-[70px]">imageStyle:</span> 
+                        <span>Style description (for image output)</span>
+                      </p>
+                      <p class="text-[10px] text-muted-foreground flex items-start gap-2">
+                        <span class="text-primary font-medium min-w-[70px]">isThumbnail:</span> 
+                        <span>true/false (for image output)</span>
+                      </p>
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
           </div>

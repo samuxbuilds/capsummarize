@@ -8,7 +8,6 @@
 import StorageUtils from '../utils/storage.js';
 import { showToast } from './ui-utils.js';
 import { logger } from '../utils/logger.js';
-import { getPromptVariants } from '../utils/variantsCache.js';
 import { SettingsForm, type SettingsFormElements } from './components/SettingsForm.js';
 import type { OutputType } from '../config/prompts.js';
 
@@ -27,7 +26,15 @@ export interface CustomVariant {
    */
   outputType?: OutputType;
   /**
-   * Thumbnail style variant ID (optional, only for image output)
+   * Image style description (optional, only for image output)
+   */
+  imageStyle?: string;
+  /**
+   * Whether this is a thumbnail style (optional, only for image output)
+   */
+  isThumbnail?: boolean;
+  /**
+   * @deprecated Use imageStyle instead. Kept for backward compatibility.
    */
   thumbnailStyle?: string;
 }
@@ -98,6 +105,11 @@ interface SettingsElements {
   customVariantsList: HTMLElement;
   emptyState: HTMLElement;
 
+  // Import/Export
+  importVariantsBtn: HTMLButtonElement;
+  exportVariantsBtn: HTMLButtonElement;
+  importFileInput: HTMLInputElement;
+
   // Preferences
   defaultVariantTextSelect: HTMLSelectElement;
   defaultVariantImageSelect: HTMLSelectElement;
@@ -106,14 +118,33 @@ interface SettingsElements {
 
   // Form
   variantOutputType: HTMLSelectElement;
-  variantThumbnailStyle: HTMLSelectElement;
-  thumbnailStyleContainer: HTMLElement;
+  variantImageStyle: HTMLInputElement;
+  variantIsThumbnail: HTMLInputElement;
+  imageStyleContainer: HTMLElement;
 }
 
 let elements: SettingsElements;
 let settingsForm: SettingsForm;
 let customVariants: CustomVariant[] = [];
 let userPreferences: UserPreferences = { ...DEFAULT_PREFERENCES };
+
+/**
+ * Reset image style fields to default values
+ */
+function resetImageStyleFields(): void {
+  if (elements.imageStyleContainer) {
+    elements.imageStyleContainer.classList.add('hidden');
+  }
+  if (elements.variantImageStyle) {
+    elements.variantImageStyle.value = '';
+  }
+  if (elements.variantIsThumbnail) {
+    elements.variantIsThumbnail.checked = false;
+  }
+  if (elements.variantOutputType) {
+    elements.variantOutputType.value = 'text';
+  }
+}
 
 /**
  * Initialize the settings page
@@ -130,6 +161,9 @@ async function init(): Promise<void> {
     preferencesTab: document.getElementById('preferencesTab') as HTMLElement,
     customVariantsList: document.getElementById('customVariantsList') as HTMLElement,
     emptyState: document.getElementById('emptyState') as HTMLElement,
+    importVariantsBtn: document.getElementById('importVariantsBtn') as HTMLButtonElement,
+    exportVariantsBtn: document.getElementById('exportVariantsBtn') as HTMLButtonElement,
+    importFileInput: document.getElementById('importFileInput') as HTMLInputElement,
     defaultVariantTextSelect: document.getElementById(
       'defaultVariantTextSelect'
     ) as HTMLSelectElement,
@@ -141,8 +175,9 @@ async function init(): Promise<void> {
     ) as HTMLSelectElement,
     includeTimestampsToggle: document.getElementById('includeTimestampsToggle') as HTMLInputElement,
     variantOutputType: document.getElementById('variantOutputType') as HTMLSelectElement,
-    variantThumbnailStyle: document.getElementById('variantThumbnailStyle') as HTMLSelectElement,
-    thumbnailStyleContainer: document.getElementById('thumbnailStyleContainer') as HTMLElement,
+    variantImageStyle: document.getElementById('variantImageStyle') as HTMLInputElement,
+    variantIsThumbnail: document.getElementById('variantIsThumbnail') as HTMLInputElement,
+    imageStyleContainer: document.getElementById('imageStyleContainer') as HTMLElement,
   };
 
   // Initialize SettingsForm
@@ -165,6 +200,22 @@ async function init(): Promise<void> {
     handleFormSubmit,
     [] // Will be updated after loading variants
   );
+
+  // Add listeners to reset image style fields when form is reset/cancelled
+  const cancelBtn = document.getElementById('cancelFormBtn');
+  const toggleBtn = document.getElementById('toggleFormBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', resetImageStyleFields);
+  }
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const form = document.getElementById('variantForm');
+      // If form is being hidden (was visible), reset image fields
+      if (form && !form.classList.contains('hidden')) {
+        resetImageStyleFields();
+      }
+    });
+  }
 
   // Setup event listeners
   setupEventListeners();
@@ -217,20 +268,30 @@ function setupEventListeners(): void {
     elements.includeTimestampsToggle.addEventListener('change', handlePreferenceChange);
   }
 
-  // Form: Show/Hide Thumbnail Style based on Output Type
+  // Form: Show/Hide Image Style options based on Output Type
   if (elements.variantOutputType) {
-    elements.variantOutputType.addEventListener('change', async () => {
+    elements.variantOutputType.addEventListener('change', () => {
       const type = elements.variantOutputType.value;
       if (type === 'image') {
-        elements.thumbnailStyleContainer.classList.remove('hidden');
-        // Populate thumbnail styles if empty
-        if (elements.variantThumbnailStyle.options.length <= 1) {
-          await populateThumbnailStyles();
-        }
+        elements.imageStyleContainer.classList.remove('hidden');
       } else {
-        elements.thumbnailStyleContainer.classList.add('hidden');
+        elements.imageStyleContainer.classList.add('hidden');
+        // Reset image style fields when switching away from image
+        elements.variantImageStyle.value = '';
+        elements.variantIsThumbnail.checked = false;
       }
     });
+  }
+
+  // Import/Export
+  if (elements.importVariantsBtn) {
+    elements.importVariantsBtn.addEventListener('click', handleImportClick);
+  }
+  if (elements.exportVariantsBtn) {
+    elements.exportVariantsBtn.addEventListener('click', handleExport);
+  }
+  if (elements.importFileInput) {
+    elements.importFileInput.addEventListener('change', handleImportFile);
   }
 }
 
@@ -265,7 +326,8 @@ async function handleFormSubmit(
 ): Promise<void> {
   const { variant, description, prompt } = data;
   const outputType = (elements.variantOutputType.value as OutputType) || 'text';
-  const thumbnailStyle = elements.variantThumbnailStyle.value || undefined;
+  const imageStyle = elements.variantImageStyle.value.trim() || undefined;
+  const isThumbnail = elements.variantIsThumbnail.checked;
 
   // Validation
   if (!variant || !description || !prompt) {
@@ -316,7 +378,8 @@ async function handleFormSubmit(
       createdAt,
       isCustom: true,
       outputType,
-      thumbnailStyle,
+      imageStyle: outputType === 'image' ? imageStyle : undefined,
+      isThumbnail: outputType === 'image' ? isThumbnail : undefined,
     };
 
     // Remove existing variant with same ID
@@ -446,65 +509,70 @@ function createVariantCard(variant: CustomVariant): string {
     variant.prompt.length > 150 ? variant.prompt.substring(0, 150) + '...' : variant.prompt;
 
   return `
-    <div class="card p-5 space-y-3 fade-in">
+    <div class="card p-6 space-y-4 fade-in">
       <div class="flex items-start justify-between gap-4 p-5">
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-2">
-            <code class="text-sm font-semibold text-primary">${escapeHtml(variant.variant)}</code>
-            <span class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">Custom</span>
+          <div class="flex items-center justify-between mb-2">
+             <div class="flex items-center gap-3">
+                <span class="py-0.5 text-xs font-medium bg-primary/10 text-primary rounded">
+                  Style: ${escapeHtml(variant.variant)}
+                </span>
+             </div>
+             <div class="flex items-center gap-4">
+                <span class="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                  ${variant.outputType || 'TEXT'}
+                </span>
+                <span class="text-xs text-muted-foreground/60">Created ${date}</span>
+             </div>
           </div>
-          <p class="text-sm text-foreground mb-3 leading-relaxed">${escapeHtml(variant.description)}</p>
-            ${escapeHtml(truncatedPrompt)}
-          </div>
-          <div class="flex gap-2 mt-2">
-            <span class="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
-              ${variant.outputType || 'TEXT'}
-            </span>
-            ${
-              variant.thumbnailStyle
-                ? `<span class="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">THUMBNAIL: ${escapeHtml(variant.thumbnailStyle)}</span>`
+          
+          <p class="text-sm text-foreground font-medium mb-2">${escapeHtml(variant.description)}</p>
+          <p class="text-sm text-muted-foreground leading-relaxed mb-4">${escapeHtml(truncatedPrompt)}</p>
+          
+           ${
+              variant.imageStyle
+                ? `<div class="mb-4"><span class="text-xs text-muted-foreground">Style: <span class="text-foreground">${escapeHtml(variant.imageStyle)}</span></span></div>`
                 : ''
             }
+
+          <div class="flex gap-3">
+            <button 
+              type="button" 
+              class="p-1.5 text-muted-foreground hover:text-primary transition-colors" 
+              title="Edit variant"
+              aria-label="Edit ${escapeHtml(variant.variant)} variant"
+              data-action="edit"
+              data-variant="${escapeHtml(variant.variant)}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button 
+              type="button" 
+              class="p-1.5 text-muted-foreground hover:text-primary transition-colors" 
+              title="Duplicate variant"
+              aria-label="Duplicate ${escapeHtml(variant.variant)} variant"
+              data-action="duplicate"
+              data-variant="${escapeHtml(variant.variant)}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
+            </button>
+            <button 
+              type="button" 
+              class="p-1.5 text-muted-foreground hover:text-destructive transition-colors" 
+              title="Delete variant"
+              aria-label="Delete ${escapeHtml(variant.variant)} variant"
+              data-action="delete"
+              data-variant="${escapeHtml(variant.variant)}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
           </div>
-          <p class="text-xs text-muted-foreground/60 mt-3">Created ${date}</p>
-        </div>
-        <div class="flex gap-1.5 flex-shrink-0">
-          <button 
-            type="button" 
-            class="btn-icon-sm" 
-            title="Edit variant"
-            aria-label="Edit ${escapeHtml(variant.variant)} variant"
-            data-action="edit"
-            data-variant="${escapeHtml(variant.variant)}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-          </button>
-          <button 
-            type="button" 
-            class="btn-icon-sm" 
-            title="Duplicate variant"
-            aria-label="Duplicate ${escapeHtml(variant.variant)} variant"
-            data-action="duplicate"
-            data-variant="${escapeHtml(variant.variant)}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-            </svg>
-          </button>
-          <button 
-            type="button" 
-            class="btn-icon-sm text-destructive hover:bg-destructive/10" 
-            title="Delete variant"
-            aria-label="Delete ${escapeHtml(variant.variant)} variant"
-            data-action="delete"
-            data-variant="${escapeHtml(variant.variant)}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-            </svg>
-          </button>
         </div>
       </div>
     </div>
@@ -519,6 +587,20 @@ function handleEdit(variantId: string): void {
   if (!variant) return;
 
   settingsForm.edit(variant);
+
+  // Set output type and image style fields
+  elements.variantOutputType.value = variant.outputType || 'text';
+
+  // Handle image style container visibility and values
+  if (variant.outputType === 'image') {
+    elements.imageStyleContainer.classList.remove('hidden');
+    elements.variantImageStyle.value = variant.imageStyle || variant.thumbnailStyle || '';
+    elements.variantIsThumbnail.checked = variant.isThumbnail || false;
+  } else {
+    elements.imageStyleContainer.classList.add('hidden');
+    elements.variantImageStyle.value = '';
+    elements.variantIsThumbnail.checked = false;
+  }
 }
 
 /**
@@ -529,6 +611,20 @@ function handleDuplicate(variantId: string): void {
   if (!variant) return;
 
   settingsForm.duplicate(variant);
+
+  // Set output type and image style fields
+  elements.variantOutputType.value = variant.outputType || 'text';
+
+  // Handle image style container visibility and values
+  if (variant.outputType === 'image') {
+    elements.imageStyleContainer.classList.remove('hidden');
+    elements.variantImageStyle.value = variant.imageStyle || variant.thumbnailStyle || '';
+    elements.variantIsThumbnail.checked = variant.isThumbnail || false;
+  } else {
+    elements.imageStyleContainer.classList.add('hidden');
+    elements.variantImageStyle.value = '';
+    elements.variantIsThumbnail.checked = false;
+  }
 }
 
 /**
@@ -566,24 +662,214 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Populate thumbnail styles for the form
+ * Export file format version for compatibility checking
  */
-async function populateThumbnailStyles(): Promise<void> {
+const EXPORT_FORMAT_VERSION = 1;
+
+/**
+ * Export data structure
+ */
+interface ExportData {
+  version: number;
+  exportedAt: string;
+  variants: CustomVariant[];
+}
+
+/**
+ * Import data structure (with unknown variants for validation)
+ */
+interface ImportData {
+  version?: number;
+  exportedAt?: string;
+  variants?: unknown[];
+}
+
+/**
+ * Handle import button click - triggers file input
+ */
+function handleImportClick(): void {
+  elements.importFileInput.click();
+}
+
+/**
+ * Handle file selection for import
+ */
+async function handleImportFile(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  // Reset file input for future imports
+  target.value = '';
+
   try {
-    const { getThumbnailPromptVariants } = await import('../utils/variantsCache.js');
-    const variants = await getThumbnailPromptVariants();
+    const text = await file.text();
+    const data = JSON.parse(text) as ImportData;
 
-    elements.variantThumbnailStyle.innerHTML = '<option value="">None (Standard Image)</option>';
+    // Validate export format
+    if (!data.version || !Array.isArray(data.variants)) {
+      showToast('Invalid file format. Please select a valid export file.', 3000, 'error');
+      return;
+    }
 
-    variants.forEach((v) => {
-      const option = document.createElement('option');
-      option.value = v.variant;
-      option.textContent = v.label;
-      elements.variantThumbnailStyle.appendChild(option);
-    });
+    // Validate each variant
+    const validVariants: CustomVariant[] = [];
+    const errors: string[] = [];
+
+    for (const variant of data.variants) {
+      if (!isValidCustomVariant(variant)) {
+        const variantId =
+          variant && typeof variant === 'object' && 'variant' in variant
+            ? String((variant as { variant: unknown }).variant)
+            : 'unknown';
+        errors.push(`Invalid variant: ${variantId}`);
+        continue;
+      }
+      validVariants.push({
+        variant: variant.variant,
+        description: variant.description,
+        prompt: variant.prompt,
+        createdAt: variant.createdAt || Date.now(),
+        isCustom: true,
+        outputType: variant.outputType || 'text',
+        imageStyle: variant.imageStyle || variant.thumbnailStyle, // Support legacy thumbnailStyle
+        isThumbnail: variant.isThumbnail,
+      });
+    }
+
+    if (validVariants.length === 0) {
+      showToast('No valid variants found in the file.', 3000, 'error');
+      return;
+    }
+
+    // Check for duplicates with existing variants
+    const existingIds = new Set(customVariants.map((v) => v.variant));
+    const newVariants = validVariants.filter((v) => !existingIds.has(v.variant));
+    const duplicates = validVariants.filter((v) => existingIds.has(v.variant));
+
+    if (duplicates.length > 0 && newVariants.length === 0) {
+      // All variants are duplicates - ask to replace
+      const confirmed = confirm(
+        `All ${duplicates.length} variant(s) already exist.\n\n` +
+          `Do you want to replace them with the imported versions?`
+      );
+      if (!confirmed) return;
+
+      // Replace existing variants
+      for (const importedVariant of duplicates) {
+        customVariants = customVariants.filter((v) => v.variant !== importedVariant.variant);
+        customVariants.push(importedVariant);
+      }
+    } else if (duplicates.length > 0) {
+      // Some duplicates, some new
+      const confirmed = confirm(
+        `Found ${newVariants.length} new variant(s) and ${duplicates.length} duplicate(s).\n\n` +
+          `New: ${newVariants.map((v) => v.variant).join(', ')}\n` +
+          `Duplicates: ${duplicates.map((v) => v.variant).join(', ')}\n\n` +
+          `Do you want to import new variants and replace duplicates?`
+      );
+      if (!confirmed) return;
+
+      // Add new variants and replace duplicates
+      for (const importedVariant of [...newVariants, ...duplicates]) {
+        customVariants = customVariants.filter((v) => v.variant !== importedVariant.variant);
+        customVariants.push(importedVariant);
+      }
+    } else {
+      // No duplicates - just add
+      customVariants.push(...newVariants);
+    }
+
+    // Save to storage
+    await StorageUtils.set(CUSTOM_VARIANTS_KEY, customVariants);
+
+    // Update form's existing variants list
+    settingsForm.setExistingVariants(customVariants.map((v) => v.variant));
+
+    const importedCount = newVariants.length + duplicates.length;
+    showToast(`Successfully imported ${importedCount} variant(s)!`, 2000, 'success');
+
+    // Refresh the UI
+    await loadAndRenderVariants();
+
+    logger.info(`[Settings] Imported ${importedCount} variants`);
   } catch (err) {
-    console.error('Failed to load thumbnail styles', err);
+    console.error('[Settings] Failed to import variants:', err);
+    if (err instanceof SyntaxError) {
+      showToast('Invalid JSON file. Please select a valid export file.', 3000, 'error');
+    } else {
+      showToast('Failed to import variants. Please try again.', 3000, 'error');
+    }
   }
+}
+
+/**
+ * Validate a custom variant object
+ */
+function isValidCustomVariant(obj: unknown): obj is CustomVariant {
+  if (!obj || typeof obj !== 'object') return false;
+
+  const v = obj as Record<string, unknown>;
+
+  return (
+    typeof v.variant === 'string' &&
+    v.variant.length > 0 &&
+    /^[a-z0-9-]+$/.test(v.variant) &&
+    typeof v.description === 'string' &&
+    v.description.length > 0 &&
+    typeof v.prompt === 'string' &&
+    v.prompt.length > 0
+  );
+}
+
+/**
+ * Handle export button click
+ */
+function handleExport(): void {
+  if (customVariants.length === 0) {
+    showToast('No custom variants to export.', 2000, 'error');
+    return;
+  }
+
+  try {
+    const exportData: ExportData = {
+      version: EXPORT_FORMAT_VERSION,
+      exportedAt: new Date().toISOString(),
+      variants: customVariants,
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Create temporary download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `capsummarize-custom-styles-${formatDateForFilename(new Date())}.json`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Cleanup
+    URL.revokeObjectURL(url);
+
+    showToast(`Exported ${customVariants.length} variant(s) successfully!`, 2000, 'success');
+    logger.info(`[Settings] Exported ${customVariants.length} variants`);
+  } catch (err) {
+    console.error('[Settings] Failed to export variants:', err);
+    showToast('Failed to export variants. Please try again.', 3000, 'error');
+  }
+}
+
+/**
+ * Format date for filename (YYYY-MM-DD)
+ */
+function formatDateForFilename(date: Date): string {
+  const isoDate = date.toISOString().split('T')[0];
+  return isoDate ?? date.toISOString().slice(0, 10);
 }
 
 /**

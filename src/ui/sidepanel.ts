@@ -733,7 +733,7 @@ async function handleOutputTypeChange(outputType: OutputType): Promise<void> {
     const hints: Record<OutputType, string> = {
       text: 'Generate text summaries from video transcripts',
       image: 'Generate images from video (ChatGPT, Gemini, Grok)',
-      video: 'Generate 8-second video clips (Gemini only)',
+      video: 'Generate video clips',
     };
     elements.outputTypeHint.textContent = hints[outputType];
   }
