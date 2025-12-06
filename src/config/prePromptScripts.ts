@@ -74,10 +74,10 @@ export async function grokImageModalFn(prompt: string): Promise<boolean> {
   const maxRetries = 15;
   const retryInterval = 2000; // 2 seconds
 
-  // Selectors for the modal textarea and submit button
+  // Selectors for the modal textarea and submit button (case-insensitive aria-label matching)
   const promptSelector =
-    "textarea[aria-label='Make a video'], textarea[aria-label='Make an image']";
-  const submitSelector = "button[aria-label='Make video'], button[aria-label='Make image']";
+    "textarea[aria-label='Make a video' i], textarea[aria-label='Make an image' i]";
+  const submitSelector = "button[aria-label='Make video' i], button[aria-label='Make image' i]";
 
   console.log('[Grok Modal] Waiting for image modal to appear...');
 

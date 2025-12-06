@@ -110,21 +110,21 @@ export const providers: Record<Provider, ProviderConfig> = {
     textConfig: {
       url: 'https://gemini.google.com/app',
       promptSelector: 'div[contenteditable="true"]',
-      submitSelector: 'button[aria-label="Send message"]',
+      submitSelector: 'button[aria-label="Send message" i]',
     },
     imageConfig: {
       url: 'https://gemini.google.com/app',
       promptSelector: 'div[contenteditable="true"]',
-      submitSelector: 'button[aria-label="Send message"]',
+      submitSelector: 'button[aria-label="Send message" i]',
       // Need to click "Create Image" button first
-      prePromptSelector: 'button[aria-label*="Create Image"]',
+      prePromptSelector: 'button[aria-label*="Create Image" i]',
     },
     videoConfig: {
       url: 'https://gemini.google.com/app',
       promptSelector: 'div[contenteditable="true"]',
-      submitSelector: 'button[aria-label="Send message"]',
+      submitSelector: 'button[aria-label="Send message" i]',
       // Need to click "Create video" button first
-      prePromptSelector: 'button[aria-label*="Create video"]',
+      prePromptSelector: 'button[aria-label*="Create video" i]',
     },
   },
   grok: {
@@ -156,7 +156,7 @@ export const providers: Record<Provider, ProviderConfig> = {
     textConfig: {
       url: 'https://claude.ai/new',
       promptSelector: 'div[contenteditable="true"]',
-      submitSelector: 'button[aria-label="Send message"]',
+      submitSelector: 'button[aria-label="Send message" i]',
     },
     // Claude doesn't support image generation
   },
